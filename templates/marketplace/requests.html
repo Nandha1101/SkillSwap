@@ -1,0 +1,34 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Requests · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page requests-page">
+  <header class="member-page-heading request-page-heading">
+    <div><span class="eyebrow"><span class="eyebrow-dot"></span> THE BEGINNING OF A GOOD THING</span><h1>Little <em>openings.</em></h1><p>Every request is someone saying, “I think we could help each other.”</p></div>
+    <span class="heading-doodle" aria-hidden="true">✳</span>
+  </header>
+  <div class="requests-tabs" role="navigation" aria-label="Request type">
+    <a class="request-tab {% if tab == 'received' %}active{% endif %}" href="{% url 'requests' %}?tab=received">Coming your way <span>{% if tab == 'received' %}{{ items|length }}{% endif %}</span></a>
+    <a class="request-tab {% if tab == 'sent' %}active{% endif %}" href="{% url 'requests' %}?tab=sent">Out in the world</a>
+  </div>
+  <div class="request-list">
+    {% for item in items %}
+    <article class="request-card">
+      <div class="request-card-head"><div class="request-person"><span class="request-avatar {% cycle 'avatar-lilac' 'avatar-mint' %}">{{ item.name|first|upper }}</span><div><h2>{{ item.name }}</h2><p>{{ item.college|default:"College not added" }}</p></div></div><span class="request-date">{{ item.created|date:"M j, Y" }}</span></div>
+      <div class="request-exchange"><div><small>YOU'D SHOW THEM</small><strong>{{ item.requested }}</strong></div><span class="request-exchange-icon" aria-hidden="true">↗<br>↙</span><div><small>THEY'D SHOW YOU</small><strong>{{ item.offered }}</strong></div></div>
+      {% if item.message %}<blockquote>“{{ item.message }}”</blockquote>{% endif %}
+      <div class="request-card-footer">
+        {% if item.status == "pending" and tab == "received" %}
+        <span class="request-prompt">Sounds like a good swap?</span>
+        <div class="request-actions">
+          <form method="post" action="{% url 'update_request' item.id %}">{% csrf_token %}<input type="hidden" name="action" value="declined"><button class="request-decline" type="submit">Not this time</button></form>
+          <form method="post" action="{% url 'update_request' item.id %}">{% csrf_token %}<button class="request-accept" name="action" value="accepted" type="submit">Let's swap <span>↗</span></button></form>
+        </div>
+        {% else %}<span class="status-pill {% if item.status == 'accepted' %}status-active{% else %}status-neutral{% endif %}"><i></i>{{ item.status|title }}</span>{% if item.exchange_id %}<a class="person-card-link" href="{% url 'exchange_learning' item.exchange_id %}">Open learning space <span>↗</span></a>{% endif %}{% endif %}
+      </div>
+    </article>
+    {% empty %}
+    <div class="requests-empty"><span class="empty-spark" aria-hidden="true">✳</span><h2>{% if tab == 'received' %}Your inbox is taking a little breather.{% else %}Nothing sent out just yet.{% endif %}</h2><p>{% if tab == 'received' %}When someone spots a skill swap with you, their note will show up here.{% else %}Found someone with a skill you'd love to learn? Your first hello starts here.{% endif %}</p><a href="{% url 'explore' %}" class="button-mint">Find a good match <span>↗</span></a></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

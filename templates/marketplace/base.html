@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A peer-to-peer skill exchange for college students.">
+    <title>{% block title %}Peer Skill Exchange{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021">
+    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261021-design-4">
+    <script src="{% static 'js/college-search.js' %}" defer></script>
+    <script src="{% static 'js/auth-toggle.js' %}" defer></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body class="{% if user.is_authenticated %}member-site{% if current_route == 'dashboard' %} theme-dashboard{% elif current_route == 'explore' %} theme-explore{% elif current_route == 'requests' %} theme-requests{% elif current_route == 'sessions' %} theme-sessions{% elif current_route == 'settings' %} theme-settings{% elif current_route == 'profile' or current_route == 'my_profile' %} theme-profile{% elif current_route == 'exchange_learning' %} theme-learning{% endif %}{% else %}bg-surface{% endif %} font-sans text-text-primary">
+    {% if user.is_authenticated %}
+      <header class="member-nav">
+        <div class="member-nav-inner">
+            <a href="{% url 'dashboard' %}" class="landing-brand" aria-label="SkillSwap dashboard">
+              <span class="brand-mark" aria-hidden="true">s</span>
+              <span>skillswap<span class="brand-period">.</span></span>
+            </a>
+            <nav class="member-nav-links" aria-label="Main navigation">
+              {% for label, route in nav_items %}
+                <a href="{% url route %}" class="{% if current_route == route %}active{% endif %}">{{ label }}</a>
+              {% endfor %}
+            </nav>
+            <div class="member-nav-account">
+              <a href="{% url 'my_profile' %}" class="member-nav-profile"><span class="mini-avatar">{{ user.first_name|first|upper }}</span><span>{{ user.get_full_name|default:user.username }}</span></a>
+              <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+                  <button class="member-nav-logout" type="submit">Log out <span>↗</span></button>
+                </form>
+              </div>
+        </div>
+      </header>
+    {% endif %}
+    {% if messages %}
+      <div class="max-w-3xl mx-auto px-4 pt-4" aria-live="polite">
+        {% for message in messages %}
+          <p class="notice {% if message.tags %}notice-{{ message.tags }}{% endif %}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <main class="{% if user.is_authenticated %}pb-20 md:pb-8{% endif %}">
+      {% block content %}{% endblock %}
+    </main>
+    {% if user.is_authenticated %}
+      <nav class="mobile-nav md:hidden" aria-label="Mobile navigation">
+        {% for label, route in mobile_nav_items %}
+          <a href="{% url route %}" class="{% if current_route == route %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>

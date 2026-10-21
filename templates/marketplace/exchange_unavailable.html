@@ -1,0 +1,12 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Learning space unavailable · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page exchange-unavailable-page">
+  <section class="exchange-unavailable-card">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> A LITTLE DETOUR</span>
+    <h1>This learning space <em>isn’t available.</em></h1>
+    <p>It may belong to another account, or the exchange hasn’t been accepted yet. Open Sessions with the account that joined the exchange to find its learning space.</p>
+    <a class="settings-save" href="{% url 'sessions' %}">Go to sessions <span>↗</span></a>
+  </section>
+</div>
+{% endblock %}

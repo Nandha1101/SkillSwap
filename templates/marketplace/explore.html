@@ -1,0 +1,38 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Explore · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page explore-page">
+  <header class="explore-intro">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> THE GOOD STUFF IS OUT THERE</span>
+    <h1>Find your kind<br>of <em>curious.</em></h1>
+    <p>Meet students who know what you want to learn—and want to learn what you know.</p>
+  </header>
+  <form method="get" class="explore-search-panel">
+    <div class="explore-search-row">
+      <label class="explore-search-field" for="teach"><span class="search-icon search-icon-coral">↑</span><span><small>I CAN SHOW SOMEONE</small><input id="teach" name="teach" value="{{ teach }}" placeholder="e.g. Python, Figma, guitar"></span></label>
+      <span class="search-swap-mark" aria-hidden="true">↔</span>
+      <label class="explore-search-field" for="learn"><span class="search-icon search-icon-lilac">↓</span><span><small>I'D LOVE TO LEARN</small><input id="learn" name="learn" value="{{ learn }}" placeholder="e.g. Illustration, public speaking"></span></label>
+      <button type="submit" class="explore-submit">Find my people <span>↗</span></button>
+    </div>
+  </form>
+
+  <section class="explore-results">
+    <div class="results-heading"><div><span class="eyebrow">A LITTLE SERENDIPITY</span><h2>{{ users|length }} {% if users|length == 1 %}possible connection{% else %}possible connections{% endif %}<span>.</span></h2></div><span class="results-sort">GOOD PEOPLE, GOOD SKILLS <span>✳</span></span></div>
+    <div class="explore-grid">
+      {% for person in users %}
+      <article class="explore-person-card">
+        <div class="explore-card-top"><span class="explore-avatar {% cycle 'avatar-peach' 'avatar-lilac' 'avatar-mint' 'avatar-yellow' %}">{{ person.name|first|upper }}</span><span class="rating-pill">{{ person.exchanges }} swaps</span></div>
+        <a class="explore-person-name" href="{% url 'profile' person.id %}">{{ person.name }} <span>↗</span></a>
+        <p class="explore-college">{{ person.college }}</p>
+        <p class="explore-bio">{{ person.bio }}</p>
+        <div class="person-skills-block"><small>THEY CAN SHOW YOU</small><div class="skill-list">{% for skill in person.can_teach %}<span class="skill-chip">{{ skill }}</span>{% endfor %}</div></div>
+        <div class="person-skills-block wants-skills"><small>THEY'RE HOPING TO LEARN</small><div class="skill-list">{% for skill in person.wants_to_learn %}<span class="skill-chip">{{ skill }}</span>{% endfor %}</div></div>
+        <a class="person-card-link" href="{% url 'profile' person.id %}">See if you click <span>↗</span></a>
+      </article>
+      {% empty %}
+      <div class="explore-empty"><span>⌕</span><h3>No swaps found just yet.</h3><p>Try another skill or clear your filters. Your people are out there.</p><a href="{% url 'explore' %}" class="button-mint">Start fresh <span>↗</span></a></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

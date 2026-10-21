@@ -1,0 +1,67 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Sessions · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page sessions-page">
+  <header class="member-page-heading">
+    <div><span class="eyebrow"><span class="eyebrow-dot"></span> TIME WELL SPENT</span><h1>On the <em>calendar.</em></h1><p>Little moments of showing, learning, and figuring it out together.</p></div>
+    <span class="calendar-doodle" aria-hidden="true">◷</span>
+  </header>
+  {% if form.fields.exchange.queryset %}
+  <section class="profile-history">
+    <div class="profile-history-heading"><div><span class="eyebrow">MAKE A PLAN</span><h2>Schedule a session.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
+    <form method="post" action="{% url 'schedule_session' %}" class="settings-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+      <div class="settings-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}</div>
+      {% endfor %}
+      <button type="submit" class="settings-save">Add to calendar <span>↗</span></button>
+    </form>
+  </section>
+  {% endif %}
+  {% if active_exchanges %}
+  <section class="sessions-section">
+    <div class="sessions-section-heading"><div><span class="eyebrow">WHEN YOU'VE SHARED ENOUGH</span><h2>Wrap up a swap.</h2></div></div>
+    <div class="past-session-list">
+      {% for exchange in active_exchanges %}
+      <article class="past-session"><span class="past-session-check" aria-hidden="true">↔</span><div class="past-session-main"><h3>{{ exchange.request.offered_skill }} ↔ {{ exchange.request.requested_skill }}</h3><p>With {% if exchange.request.sender_id == user.pk %}{{ exchange.request.recipient.get_full_name|default:exchange.request.recipient.username }}{% else %}{{ exchange.request.sender.get_full_name|default:exchange.request.sender.username }}{% endif %}</p><a class="person-card-link" href="{% url 'exchange_learning' exchange.pk %}">Open learning space <span>↗</span></a><form method="post" action="{% url 'complete_exchange' exchange.pk %}">{% csrf_token %}<button type="submit" class="request-accept">Mark this swap complete <span>✓</span></button></form></div></article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% if completed_exchanges %}
+  <section class="sessions-section completed-exchanges-section">
+    <div class="sessions-section-heading"><div><span class="eyebrow">KEEP THE GOOD NOTES</span><h2>Past swaps.</h2></div><span class="session-count">{{ completed_exchanges|length }} completed</span></div>
+    <div class="past-session-list">
+      {% for exchange in completed_exchanges %}
+      <article class="past-session"><span class="past-session-check" aria-hidden="true">✓</span><div class="past-session-main"><h3>{{ exchange.request.offered_skill }} ↔ {{ exchange.request.requested_skill }}</h3><p>With {{ exchange.partner.get_full_name|default:exchange.partner.username }}</p><a class="person-card-link" href="{% url 'exchange_learning' exchange.pk %}">Revisit learning space <span>↗</span></a></div></article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  <section class="sessions-section">
+    <div class="sessions-section-heading"><div><span class="eyebrow">COMING UP</span><h2>See you soon.</h2></div><span class="session-count">{{ upcoming|length }} planned</span></div>
+    <div class="upcoming-list">
+      {% for session in upcoming %}
+      <article class="upcoming-session">
+        <div class="session-date-tile"><strong>{{ session.starts_at|date:"d" }}</strong><span>{{ session.starts_at|date:"M" }}</span></div>
+        <div class="upcoming-session-main"><span class="card-kicker">SWAPPING WITH {{ session.partner.get_full_name|default:session.partner.username|upper }}</span><h3>{{ session.topic }}</h3><p>{{ session.starts_at|date:"l, M j" }} <span>·</span> {{ session.starts_at|date:"g:i A" }} <span>·</span> {{ session.duration_minutes }} minutes</p></div>
+        <span class="session-kind kind-learning">{{ session.exchange.request.offered_skill }} ↔ {{ session.exchange.request.requested_skill }}</span>
+      </article>
+      {% empty %}<div class="sessions-empty"><span>◷</span><p>Nothing on the calendar yet. Accept a request or start a good swap to plan a session.</p><a href="{% url 'explore' %}">Find your next swap ↗</a></div>{% endfor %}
+    </div>
+  </section>
+  <section class="sessions-section past-sessions-section">
+    <div class="sessions-section-heading"><div><span class="eyebrow">ALREADY IN THE BAG</span><h2>Look how far you've come.</h2></div><span class="session-count">{{ past|length }} shared</span></div>
+    <div class="past-session-list">
+      {% for session in past %}
+      <article class="past-session"><span class="past-session-check" aria-hidden="true">{% if session.status == "completed" %}✓{% else %}◷{% endif %}</span><div class="past-session-main"><div class="past-session-meta">{{ session.starts_at|date:"l, M j" }} · {{ session.starts_at|date:"g:i A" }}</div><h3>{{ session.topic }}</h3><p>With {{ session.partner.get_full_name|default:session.partner.username }} · {{ session.duration_minutes }} minutes</p>
+        {% if session.status != "completed" %}
+        <form method="post" action="{% url 'complete_session' session.pk %}">{% csrf_token %}<button type="submit" class="request-accept">Mark session complete <span>✓</span></button></form>
+        {% endif %}
+      </div></article>
+      {% empty %}<p class="past-empty">Your first session is still ahead of you.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

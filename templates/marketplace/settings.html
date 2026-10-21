@@ -1,0 +1,49 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Your details · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page settings-page">
+  <header class="member-page-heading">
+    <div><span class="eyebrow"><span class="eyebrow-dot"></span> MAKE YOURSELF AT HOME</span><h1>Your little <em>corner.</em></h1><p>A few details help good people find you—and find a great swap.</p></div>
+    <span class="settings-doodle" aria-hidden="true">✎</span>
+  </header>
+  <form method="post" class="settings-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+    <section class="settings-section">
+      <div class="settings-section-intro"><span class="settings-section-number">01</span><div><h2>A bit about you</h2><p>The basics that make you, well, you.</p></div></div>
+      <div class="settings-fields settings-fields-profile">
+        {% for field in form %}
+          {% if field.name == "name" or field.name == "email" or field.name == "college" or field.name == "year" or field.name == "bio" %}
+          <div class="settings-field {% if field.name == 'bio' %}field-wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.name == "name" or field.name == "email" %}<span class="required-mark">*</span>{% endif %}</label>
+            {% if field.name == "college" %}<div class="college-search">{{ field }}<div id="college-results" class="college-results" role="listbox" hidden></div></div><p class="college-help">Type at least 2 characters and choose a college, or enter it yourself.</p>
+            {% else %}{{ field }}{% endif %}
+            {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+    <section class="settings-section">
+      <div class="settings-section-intro"><span class="settings-section-number">02</span><div><h2>Your skill-shaped self</h2><p>Good at something? Hoping to learn something? Put it here.</p></div></div>
+      <div class="settings-fields settings-fields-skills">
+        {% for field in form %}
+          {% if field.name == "skills_to_teach" or field.name == "skills_to_learn" %}
+          <div class="settings-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}<p class="settings-field-help">Separate each skill with a comma.</p>{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+    <section class="settings-section settings-preferences">
+      <div class="settings-section-intro"><span class="settings-section-number">03</span><div><h2>How you like to meet</h2><p>We can be flexible. You can too.</p></div></div>
+      {% for field in form %}
+        {% if field.name == "session_format" %}
+        <div class="settings-field format-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}</div>
+        {% endif %}
+      {% endfor %}
+    </section>
+    <div class="settings-save-row"><p>Your details are only here to help good swaps happen.</p><button type="submit" class="settings-save">Save my details <span>↗</span></button></div>
+  </form>
+  <section class="settings-account"><div><span class="eyebrow">NEED A BREAK?</span><h2>You can always sign out.</h2></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out <span>↗</span></button></form></section>
+</div>
+{% endblock %}

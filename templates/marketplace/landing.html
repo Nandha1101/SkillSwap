@@ -1,0 +1,127 @@
+{% extends "marketplace/base.html" %}
+{% block title %}SkillSwap — Good at something? Pass it on.{% endblock %}
+{% block content %}
+<div class="landing-page">
+  <header class="landing-nav">
+    <a class="landing-brand" href="{% url 'landing' %}" aria-label="SkillSwap home">
+      <span class="brand-mark" aria-hidden="true">s</span>
+      <span>skillswap<span class="brand-period">.</span></span>
+    </a>
+    <nav class="landing-nav-links" aria-label="Main navigation">
+      <a href="#how-it-works">How it works</a>
+      <a href="#community">The community</a>
+    </nav>
+    <div class="landing-nav-actions">
+      {% if user.is_authenticated %}
+        <a class="landing-login" href="{% url 'dashboard' %}">My dashboard <span aria-hidden="true">↗</span></a>
+      {% else %}
+        <a class="landing-login" href="{% url 'login' %}">Log in</a>
+        <a class="landing-nav-cta" href="{% url 'signup' %}">Join the swap <span aria-hidden="true">↗</span></a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main>
+    <section class="landing-hero">
+      <div class="hero-spark spark-one" aria-hidden="true">✳</div>
+      <div class="hero-spark spark-two" aria-hidden="true">✳</div>
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> A little give. A lot to gain.</span>
+        <h1>What if learning<br>was a <em>two-way</em> street?</h1>
+        <p>Share what you know. Pick up something new. SkillSwap brings students together to trade skills, one good conversation at a time.</p>
+        <div class="hero-actions">
+          <a class="button-mint" href="{% if user.is_authenticated %}{% url 'explore' %}{% else %}{% url 'signup' %}{% endif %}">Find your skill swap <span aria-hidden="true">↗</span></a>
+          <a class="button-text" href="#how-it-works">Take a look around <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-proof">
+          <span class="proof-avatars" aria-hidden="true"><i>R</i><i>M</i><i>A</i><i>+</i></span>
+          <span><strong>{{ member_count }}</strong> {% if member_count == 1 %}student has{% else %}students have{% endif %} added both teach and learn skills</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-label="An example exchange: learn illustration while teaching Python">
+        <div class="orbit orbit-one" aria-hidden="true"></div>
+        <div class="orbit orbit-two" aria-hidden="true"></div>
+        <div class="orbit-dot dot-one" aria-hidden="true"></div>
+        <div class="orbit-dot dot-two" aria-hidden="true"></div>
+        <div class="swap-note note-top"><span class="note-icon note-lilac">✳</span><span><small>YOU COULD TEACH</small><strong>Python basics</strong></span></div>
+        <div class="swap-center"><span class="swap-loop" aria-hidden="true">↗</span><span>good things<br>go both ways</span></div>
+        <div class="swap-note note-bottom"><span class="note-icon note-coral">✎</span><span><small>YOU COULD LEARN</small><strong>Illustration</strong></span></div>
+        <span class="art-caption">One skill for another. That's the whole idea.</span>
+      </div>
+      <a href="#how-it-works" class="hero-scroll" aria-label="Scroll to how it works"><span></span></a>
+    </section>
+
+    <section class="manifesto" id="how-it-works">
+      <div class="manifesto-inner">
+        <span class="eyebrow eyebrow-light">No grades. No gatekeeping. Just people.</span>
+        <h2>You already know<br><em>something</em> worth sharing.</h2>
+        <div class="manifesto-bottom">
+          <p>Maybe it's making a website, nailing an interview, or finally understanding calculus. Whatever it is, there's someone who'd love to learn it—and something they can teach you back.</p>
+          <a href="{% if user.is_authenticated %}{% url 'settings' %}{% else %}{% url 'signup' %}{% endif %}" class="circle-link" aria-label="Add your skills"><span>↗</span></a>
+        </div>
+      </div>
+      <div class="manifesto-doodle doodle-left" aria-hidden="true">✳</div>
+      <div class="manifesto-doodle doodle-right" aria-hidden="true">↗</div>
+    </section>
+
+    <section class="community-section" id="community">
+      <div class="section-intro">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Made for curious people</span>
+        <h2>Different majors.<br><em>Same energy.</em></h2>
+        <p>Designers, coders, storytellers, spreadsheet wizards—everyone has something to trade.</p>
+      </div>
+      <div class="community-grid">
+        <article class="community-card card-peach">
+          <div class="card-illustration illustration-one" aria-hidden="true"><span class="illustration-sun"></span><span class="illustration-person person-one"></span><span class="illustration-book">Aa</span></div>
+          <span class="card-kicker">MAKE IT VISIBLE</span><h3>Design &amp; creativity</h3><p>From first sketch to finished portfolio.</p>
+        </article>
+        <article class="community-card card-lilac">
+          <div class="card-illustration illustration-two" aria-hidden="true"><span class="code-window"><i></i><i></i><i></i><b>&lt;/&gt;</b></span><span class="illustration-star">✳</span></div>
+          <span class="card-kicker">MAKE IT WORK</span><h3>Code &amp; technology</h3><p>Build a project. Untangle a bug. Teach the trick.</p>
+        </article>
+        <article class="community-card card-yellow">
+          <div class="card-illustration illustration-three" aria-hidden="true"><span class="speech-bubble">Hello!<i></i></span><span class="illustration-person person-two"></span><span class="illustration-flower">✿</span></div>
+          <span class="card-kicker">MAKE YOURSELF HEARD</span><h3>Words &amp; ideas</h3><p>Languages, presenting, writing, and everything between.</p>
+        </article>
+        <article class="community-card card-mint">
+          <div class="card-illustration illustration-four" aria-hidden="true"><span class="music-disc">♫</span><span class="illustration-spark">✦</span><span class="illustration-wave"></span></div>
+          <span class="card-kicker">MAKE SOME NOISE</span><h3>Music &amp; life skills</h3><p>Play a chord. Cook a meal. Try something new.</p>
+        </article>
+      </div>
+      <a class="community-link" href="{% if user.is_authenticated %}{% url 'explore' %}{% else %}{% url 'signup' %}{% endif %}">See what you could swap <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <section class="swap-steps">
+      <div class="steps-heading"><span class="eyebrow eyebrow-light">Three steps. That's it.</span><h2>Learn a little.<br><em>Give a little.</em></h2></div>
+      <div class="steps-list">
+        <article class="step-item"><span class="step-number">01</span><div><h3>Put your skills out there</h3><p>Add a few things you can teach and a few things you've been meaning to learn.</p></div><span class="step-symbol" aria-hidden="true">✳</span></article>
+        <article class="step-item"><span class="step-number">02</span><div><h3>Find your kind of curious</h3><p>Meet students with a skill to share and a skill you want to pick up.</p></div><span class="step-symbol" aria-hidden="true">⌕</span></article>
+        <article class="step-item"><span class="step-number">03</span><div><h3>Trade time, not money</h3><p>Set up a session, show each other the ropes, and leave knowing more.</p></div><span class="step-symbol" aria-hidden="true">↗</span></article>
+      </div>
+    </section>
+
+    <section class="quote-section">
+      <span class="quote-mark" aria-hidden="true">“</span>
+      <p>Everyone has a thing they know<br>that someone else is trying to figure out.</p>
+      <span class="quote-caption">THAT'S WHERE A GOOD EXCHANGE STARTS.</span>
+      <a href="{% if user.is_authenticated %}{% url 'explore' %}{% else %}{% url 'signup' %}{% endif %}" class="quote-cta">Make your first swap <span aria-hidden="true">↗</span></a>
+      <span class="quote-flower flower-one" aria-hidden="true">✿</span><span class="quote-flower flower-two" aria-hidden="true">✳</span>
+    </section>
+
+    <section class="final-cta">
+      <div class="final-cta-stamp" aria-hidden="true">SKILLS<br>GROW<br>WHEN<br>SHARED</div>
+      <span class="eyebrow"><span class="eyebrow-dot"></span> Your next favorite skill is out there</span>
+      <h2>Bring what you've got.<br><em>Leave with something new.</em></h2>
+      <a class="button-mint" href="{% if user.is_authenticated %}{% url 'explore' %}{% else %}{% url 'signup' %}{% endif %}">{% if user.is_authenticated %}Explore the community{% else %}Create your free account{% endif %} <span aria-hidden="true">↗</span></a>
+      <p>Made for students. Always free to swap.</p>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <a class="landing-brand" href="{% url 'landing' %}"><span class="brand-mark" aria-hidden="true">s</span><span>skillswap<span class="brand-period">.</span></span></a>
+    <p>Good things go both ways.</p>
+    <div><a href="{% url 'login' %}">Log in</a><a href="{% url 'signup' %}">Join the swap</a></div>
+    <small>© 2026 SkillSwap · Made for students, by the spirit of sharing.</small>
+  </footer>
+</div>
+{% endblock %}

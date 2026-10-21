@@ -1,0 +1,62 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Dashboard · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page dashboard-page">
+  <section class="dashboard-welcome">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-dot"></span> YOUR LITTLE CORNER OF SKILLSWAP</span>
+      <h1>Hey, {{ user.first_name|default:user.username }}<em>.</em></h1>
+      <p>A little learning, a little sharing. Here's where things stand.</p>
+    </div>
+    <a href="{% url 'settings' %}" class="dashboard-profile-link"><span class="mini-avatar">{{ user.first_name|first|upper }}</span><span>Edit your profile <b>↗</b></span></a>
+  </section>
+
+  <section class="dashboard-stats" aria-label="Your activity">
+    <article class="stat-card stat-coral"><span class="stat-decoration" aria-hidden="true">↗</span><span class="stat-label">PENDING REQUESTS</span><strong>{{ pending_count }}</strong><span class="stat-caption">people want to swap with you</span></article>
+    <article class="stat-card stat-lilac"><span class="stat-decoration" aria-hidden="true">✳</span><span class="stat-label">ACTIVE SWAPS</span><strong>{{ active_count }}</strong><span class="stat-caption">good things going both ways</span></article>
+    <article class="stat-card stat-mint"><span class="stat-decoration" aria-hidden="true">◷</span><span class="stat-label">UP NEXT</span><strong>{{ upcoming_count }}</strong><span class="stat-caption">sessions on your calendar</span></article>
+  </section>
+
+  <div class="dashboard-columns">
+    <div class="dashboard-main-column">
+      <section class="dashboard-panel current-swap-panel">
+        <div class="panel-heading"><div><span class="eyebrow"><span class="eyebrow-dot"></span> CURRENTLY SWAPPING</span><h2>Look at you, learning.</h2></div><span class="status-pill status-active"><i></i> {{ active_count }} active</span></div>
+        {% for exchange in active_exchanges %}
+        <div class="swap-feature">
+          <div class="swap-feature-people"><span class="feature-avatar feature-avatar-one">{{ exchange.partner.first_name|first|upper }}</span><span class="feature-avatar feature-avatar-two">{{ user.first_name|first|upper }}</span></div>
+          <div><h3>{{ exchange.request.offered_skill }} <span>↔</span> {{ exchange.request.requested_skill }}</h3><p>Your skills are better together.</p><p class="swap-partner">Swapping with <a href="{% url 'profile' exchange.partner.pk %}">{{ exchange.partner.get_full_name|default:exchange.partner.username }} <span>↗</span></a> · {{ exchange.partner.profile.college|default:"College not added" }}</p><a class="text-link" href="{% url 'exchange_learning' exchange.pk %}">Open learning space ↗</a></div>
+        </div>
+        {% empty %}
+        <div class="sessions-empty"><span>✳</span><p>No active swaps yet. Find a student with skills that complement yours, then send a request.</p><a href="{% url 'explore' %}">Find your first swap ↗</a></div>
+        {% endfor %}
+        {% if next_session %}
+        <div class="next-session-card"><div class="session-date-tile"><strong>{{ next_session.starts_at|date:"d" }}</strong><span>{{ next_session.starts_at|date:"M" }}</span></div><div class="next-session-copy"><span class="card-kicker">YOUR NEXT SESSION · {{ next_session.starts_at|date:"g:i A" }}</span><h4>{{ next_session.topic }}</h4><p>With {{ next_session.partner.get_full_name|default:next_session.partner.username }}</p></div><a class="session-arrow" href="{% url 'sessions' %}" aria-label="View your sessions">↗</a></div>
+        {% endif %}
+      </section>
+
+      <section class="dashboard-panel">
+        <div class="panel-heading"><div><span class="eyebrow"><span class="eyebrow-dot"></span> A FEW GOOD MATCHES</span><h2>People worth meeting.</h2></div><a class="text-link" href="{% url 'explore' %}">Meet everyone <span>↗</span></a></div>
+        <div class="suggested-list">
+          {% for person in users %}
+          <article class="suggested-person"><span class="person-avatar {% cycle 'avatar-peach' 'avatar-lilac' 'avatar-mint' %}">{{ person.name|first|upper }}</span><div class="suggested-person-info"><h3>{{ person.name }}</h3><p>{{ person.college }}</p></div><div class="suggested-exchange"><span>{{ person.can_teach.0 }}</span><b>↔</b><span>{{ person.wants_to_learn.0 }}</span></div><a class="suggested-view" href="{% url 'profile' person.id %}">Say hi <span>↗</span></a></article>
+          {% empty %}<div class="sessions-empty"><span>⌕</span><p>No mutual matches yet. Add skills you can teach and want to learn to your profile to help others find you.</p><a href="{% url 'settings' %}">Update your skills ↗</a></div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <aside class="dashboard-side-column">
+      <section class="dashboard-panel attention-panel">
+        <div class="panel-heading panel-heading-small"><div><span class="eyebrow">IN YOUR INBOX</span><h2>Little pings.</h2></div><span class="inbox-count">{{ pending_count }}</span></div>
+        <p class="panel-intro">Someone's hoping to learn a thing or two from you.</p>
+        {% for exchange_request in pending_requests %}
+        <div class="inbox-preview"><span class="person-avatar avatar-lilac">{{ exchange_request.sender.first_name|first|upper }}</span><div><strong>{{ exchange_request.sender.get_full_name|default:exchange_request.sender.username }}</strong><p>{{ exchange_request.offered_skill }} <b>↔</b> {{ exchange_request.requested_skill }}</p></div><span class="inbox-new">NEW</span></div>
+        {% empty %}<p class="past-empty">No new requests right now.</p>{% endfor %}
+        <a href="{% url 'requests' %}" class="panel-bottom-link">Take a look <span>↗</span></a>
+      </section>
+      <section class="dashboard-note"><span aria-hidden="true">✳</span><p>“The best way to learn something is to teach it to someone else.”</p><small>A LITTLE SKILLSWAP WISDOM</small></section>
+      <a class="dashboard-explore-cta" href="{% url 'explore' %}"><span class="cta-spark" aria-hidden="true">⌕</span><span><strong>Got a skill to trade?</strong><small>Your next swap is out there.</small></span><b>↗</b></a>
+    </aside>
+  </div>
+</div>
+{% endblock %}

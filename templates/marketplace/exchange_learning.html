@@ -1,0 +1,159 @@
+{% extends "marketplace/base.html" %}
+{% load static %}
+{% block title %}Learning space · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page learning-page">
+  <nav class="learning-breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'sessions' %}">Sessions</a><span aria-hidden="true">/</span><span>Learning space</span>
+  </nav>
+
+  <header class="learning-hero">
+    <div class="learning-hero-copy">
+      <span class="learning-kicker">YOUR SKILLSWAP</span>
+      <h1>Learn <em>together.</em></h1>
+      <p class="learning-partner-line">A shared space for practice, notes, and good questions with <strong>{{ partner.get_full_name|default:partner.username }}</strong>.</p>
+    </div>
+    <div class="learning-exchange" aria-label="Skill exchange">
+      <div class="learning-skill"><span>YOU'RE TEACHING</span><strong>{{ teaching_skill }}</strong></div>
+      <span class="learning-exchange-arrow" aria-hidden="true">↔</span>
+      <div class="learning-skill"><span>YOU'RE LEARNING</span><strong>{{ learning_skill }}</strong></div>
+    </div>
+    <div class="learning-hero-footer">
+      <span class="learning-status-pill {% if can_edit %}is-active{% else %}is-complete{% endif %}">
+        <i aria-hidden="true"></i>{% if can_edit %}Exchange active{% else %}Exchange completed · Read only{% endif %}
+      </span>
+      {% if can_edit %}
+      <a class="learning-partner-link" href="{% url 'sessions' %}">View sessions <span aria-hidden="true">↗</span></a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if can_edit %}
+  <section class="learning-call" aria-labelledby="video-call-heading">
+    <div class="learning-call-copy">
+      <span class="learning-call-icon" aria-hidden="true">◉</span>
+      <div><h2 id="video-call-heading">Meet in your video room</h2><p>Camera and microphone are controlled by your browser. Calls use Jitsi Meet.</p></div>
+    </div>
+    <button
+      type="button"
+      class="learning-button learning-button-dark"
+      data-video-join
+      data-domain="{{ jitsi_domain }}"
+      data-room="skillswap-{{ exchange.video_room.hex }}"
+      data-display-name="{{ display_name }}"
+      aria-controls="video-room"
+    >Join call <span aria-hidden="true">↗</span></button>
+    <p class="learning-status" data-video-status role="status" aria-live="polite"></p>
+    <div id="video-room" class="video-room" data-video-container></div>
+  </section>
+  {% else %}
+  <div class="learning-readonly-note" role="status">
+    <span aria-hidden="true">✓</span><p>This exchange is complete. Your saved lessons, goals, and conversation are still here to revisit.</p>
+  </div>
+  {% endif %}
+
+  <div class="learning-workspace">
+    <section class="learning-panel lessons-panel" aria-labelledby="lessons-heading">
+      <div class="learning-panel-heading">
+        <div><span class="learning-kicker">YOUR SHARED LIBRARY</span><h2 id="lessons-heading">Lessons &amp; resources</h2></div>
+        <span class="learning-count">{{ lessons|length }}</span>
+      </div>
+      {% if can_teach %}
+      <details class="learning-compose">
+        <summary><span aria-hidden="true">＋</span> Add a lesson or resource</summary>
+        <form method="post" action="{% url 'publish_exchange_lesson' exchange.pk %}" class="learning-form">
+          {% csrf_token %}
+          {% for field in lesson_form %}
+          <div class="settings-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="learning-button learning-button-dark">Publish lesson <span aria-hidden="true">↗</span></button>
+        </form>
+      </details>
+      {% endif %}
+      <div class="lesson-list">
+        {% for lesson in lessons %}
+        <article class="lesson-card">
+          <div class="lesson-card-meta"><span class="lesson-skill">{{ lesson.skill }}</span><time datetime="{{ lesson.created_at|date:'c' }}">{{ lesson.created_at|date:"M j, Y" }}</time></div>
+          <h3>{{ lesson.title }}</h3>
+          <p class="lesson-byline">Shared by {{ lesson.author.get_full_name|default:lesson.author.username }}</p>
+          <div class="lesson-content">{{ lesson.content|linebreaksbr }}</div>
+          {% if lesson.resource_url %}<a class="lesson-resource" href="{{ lesson.resource_url }}" target="_blank" rel="noopener noreferrer">Open resource <span aria-hidden="true">↗</span></a>{% endif %}
+        </article>
+        {% empty %}
+        <div class="learning-empty"><span aria-hidden="true">＋</span><p>{% if can_edit %}Your shared library is ready. Add the first lesson or resource when you’re ready.{% else %}No lessons or resources were saved during this exchange.{% endif %}</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <aside class="learning-sidebar">
+      <section class="learning-panel goals-panel" aria-labelledby="goals-heading">
+        <div class="learning-panel-heading">
+          <div><span class="learning-kicker">KEEP MOVING</span><h2 id="goals-heading">Shared goals</h2></div>
+          <span class="learning-count">{{ goals|length }}</span>
+        </div>
+        {% if can_edit %}
+        <form method="post" action="{% url 'add_learning_goal' exchange.pk %}" class="learning-goal-form">
+          {% csrf_token %}
+          <label class="visually-hidden" for="{{ goal_form.title.id_for_label }}">{{ goal_form.title.label }}</label>
+          {{ goal_form.title }}
+          <button type="submit" class="goal-add-button" aria-label="Add learning goal">＋</button>
+        </form>
+        {% if goal_form.title.errors %}<div class="field-errors">{{ goal_form.title.errors }}</div>{% endif %}
+        {% endif %}
+        <ul class="learning-goal-list">
+          {% for goal in goals %}
+          <li class="{% if goal.is_completed %}goal-complete{% endif %}">
+            {% if can_edit %}<form method="post" action="{% url 'toggle_learning_goal' exchange.pk goal.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="goal-toggle" aria-label="{% if goal.is_completed %}Reopen{% else %}Complete{% endif %} {{ goal.title }}" aria-pressed="{{ goal.is_completed|yesno:'true,false' }}">{% if goal.is_completed %}✓{% endif %}</button>
+            </form>{% else %}<span class="goal-toggle" aria-hidden="true">{% if goal.is_completed %}✓{% endif %}</span>{% endif %}
+            <div><strong>{{ goal.title }}</strong><small>Added by {{ goal.created_by.get_full_name|default:goal.created_by.username }}{% if goal.completed_by %} · Completed by {{ goal.completed_by.get_full_name|default:goal.completed_by.username }}{% endif %}</small></div>
+          </li>
+          {% empty %}
+          <li class="learning-empty"><p>{% if can_edit %}Add a small goal to give your next session a starting point.{% else %}No goals were saved during this exchange.{% endif %}</p></li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="learning-panel chat-panel" aria-labelledby="chat-heading">
+        <div class="learning-panel-heading">
+          <div><span class="learning-kicker">JUST BETWEEN YOU TWO</span><h2 id="chat-heading">Conversation</h2></div>
+          {% if can_edit %}<span class="chat-live-indicator"><i></i> Live</span>{% else %}<span class="chat-archived-label">History</span>{% endif %}
+        </div>
+        <div
+          class="chat-feed"
+          data-chat-feed
+          data-poll-url="{% url 'exchange_messages' exchange.pk %}"
+          data-last-id="{{ latest_message_id }}"
+          aria-label="Messages with {{ partner.get_full_name|default:partner.username }}"
+        >
+          <ol data-chat-list aria-live="polite" aria-relevant="additions text">
+            {% for chat_message in chat_messages %}
+            <li class="chat-message {% if chat_message.author_id == user.pk %}chat-message-mine{% endif %}" data-message-id="{{ chat_message.pk }}">
+              <div class="chat-message-meta"><strong>{{ chat_message.author.get_full_name|default:chat_message.author.username }}</strong><time datetime="{{ chat_message.created_at|date:'c' }}">{{ chat_message.created_at|date:"M j · g:i A" }}</time></div>
+              <p>{{ chat_message.content }}</p>
+            </li>
+            {% empty %}
+            <li class="learning-empty chat-empty" data-chat-empty><p>{% if can_edit %}Start the conversation or share what you’re hoping to learn.{% else %}There are no saved messages in this exchange.{% endif %}</p></li>
+            {% endfor %}
+          </ol>
+        </div>
+        <p class="learning-status" data-chat-status role="status" aria-live="polite"></p>
+        {% if can_edit %}<form method="post" action="{% url 'send_exchange_message' exchange.pk %}" class="chat-compose">
+          {% csrf_token %}
+          <label class="visually-hidden" for="{{ message_form.content.id_for_label }}">{{ message_form.content.label }}</label>
+          {{ message_form.content }}
+          <button type="submit" class="learning-button learning-button-dark">Send <span aria-hidden="true">↗</span></button>
+        </form>{% endif %}
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/exchange-learning.js' %}" defer></script>
+{% endblock %}

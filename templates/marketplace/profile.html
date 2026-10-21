@@ -1,0 +1,38 @@
+{% extends "marketplace/base.html" %}
+{% block title %}{{ person.name }} · SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page profile-page">
+  <a class="profile-back-link" href="{% url 'explore' %}">← Back to your people</a>
+  <section class="profile-hero">
+    <div class="profile-hero-art"><span class="profile-art-orbit"></span><span class="profile-art-star">✳</span><span class="profile-avatar">{{ person.name|first|upper }}</span></div>
+    <div class="profile-hero-copy"><span class="eyebrow"><span class="eyebrow-dot"></span> HERE TO SHARE A LITTLE KNOW-HOW</span><h1>{{ person.name }}<em>.</em></h1><p class="profile-college">{{ person.college }}{% if person.year %} <span>·</span> {{ person.year }}{% endif %}</p><p class="profile-bio">{{ person.bio }}</p><div class="profile-quick-stats"><span><strong>{{ person.exchanges }}</strong> completed skill swaps</span></div>
+      {% if is_current_user %}<a href="{% url 'settings' %}" class="profile-cta">Give your profile a little love <span>↗</span></a>{% elif existing_exchange %}<span class="profile-cta">You're already swapping skills <span>✓</span></span>{% elif existing_request %}<span class="profile-cta">A request is already on its way <span>✓</span></span>{% elif can_propose %}<a href="#propose-swap" class="profile-cta">Propose a skill swap <span>↗</span></a>{% else %}<span class="profile-cta">Add matching skills to make a swap <span>↗</span></span>{% endif %}
+    </div>
+  </section>
+  <section class="profile-skills">
+    <article class="profile-skill-panel teach-panel"><div class="profile-skill-icon">↑</div><span class="eyebrow">GOOD THINGS I CAN SHOW</span><h2>I've got this.</h2><div class="profile-skill-list">{% for skill in person.can_teach %}<span>{{ skill }}<b>✳</b></span>{% endfor %}</div></article>
+    <article class="profile-skill-panel learn-panel"><div class="profile-skill-icon">↓</div><span class="eyebrow">THINGS I'M CURIOUS ABOUT</span><h2>Teach me something.</h2><div class="profile-skill-list">{% for skill in person.wants_to_learn %}<span>{{ skill }}<b>✳</b></span>{% endfor %}</div></article>
+  </section>
+  {% if not is_current_user %}
+  <section class="profile-history" id="propose-swap">
+    <div class="profile-history-heading"><div><span class="eyebrow">MAKE IT A TWO-WAY THING</span><h2>Propose a little swap.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
+    {% if can_propose and not existing_request and not existing_exchange %}
+    <form method="post" action="{% url 'create_exchange_request' person.id %}" class="settings-form">
+      {% csrf_token %}
+      {% if request_form.non_field_errors %}<div class="form-errors">{{ request_form.non_field_errors }}</div>{% endif %}
+      {% for field in request_form %}
+      <div class="settings-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}</div>
+      {% endfor %}
+      <button type="submit" class="settings-save">Send exchange request <span>↗</span></button>
+    </form>
+    {% elif existing_exchange %}<p class="past-empty">You already have an active exchange with this student.</p>
+    {% elif not can_propose %}<p class="past-empty">A good swap needs matching skills both ways. Update your skills or check back when this student adds theirs.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+  <section class="profile-history"><div class="profile-history-heading"><div><span class="eyebrow">LITTLE MOMENTS OF LEARNING</span><h2>Swap stories.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
+    {% for exchange in exchange_history %}<article class="past-session"><span class="past-session-check" aria-hidden="true">✓</span><div class="past-session-main"><div class="past-session-meta">Completed {{ exchange.completed_at|date:"M j, Y" }}</div><h3>{{ exchange.offered_skill }} ↔ {{ exchange.requested_skill }}</h3><p>Swapped with {{ exchange.partner }}</p></div></article>
+    {% empty %}<div class="profile-history-empty"><span>✳</span><p>{% if is_current_user %}Your first completed swap story is waiting to happen.{% else %}Their next skill-swap story is waiting to happen.{% endif %}</p></div>{% endfor %}
+  </section>
+</div>
+{% endblock %}
