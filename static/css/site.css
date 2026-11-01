@@ -801,11 +801,12 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
     radial-gradient(ellipse at 8% 72%, rgb(191 157 255 / 17%), transparent 28rem);
 }
 .member-site.theme-explore {
-  background-color: #f1eaff;
+  background-color: #fbf8f5;
   background-image:
-    radial-gradient(#d6c5ef .65px, transparent .75px),
-    radial-gradient(ellipse at 10% 10%, rgb(255 216 186 / 35%), transparent 29rem),
-    radial-gradient(ellipse at 88% 65%, rgb(185 235 215 / 30%), transparent 31rem);
+    radial-gradient(#e7ded4 .65px, transparent .75px),
+    radial-gradient(ellipse at 12% 16%, rgb(245 237 228 / 55%), transparent 32rem),
+    radial-gradient(ellipse at 88% 80%, rgb(240 234 225 / 45%), transparent 34rem);
+  background-size: 20px 20px, auto, auto;
 }
 .member-site.theme-requests {
   background-color: #fff1e6;
@@ -836,12 +837,12 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
     radial-gradient(ellipse at 88% 65%, rgb(191 157 255 / 24%), transparent 30rem);
 }
 .member-site.theme-learning {
-  background-color: #f0eaff;
+  background-color: #fbf8f5;
   background-image:
-    radial-gradient(#d6c5ef .65px, transparent .75px),
-    radial-gradient(ellipse at 10% 13%, rgb(255 211 187 / 35%), transparent 30rem),
-    radial-gradient(ellipse at 90% 68%, rgb(80 213 173 / 26%), transparent 31rem);
-  background-size: 19px 19px, auto, auto;
+    radial-gradient(#e7ded4 .65px, transparent .75px),
+    radial-gradient(ellipse at 10% 12%, rgb(246 238 230 / 60%), transparent 30rem),
+    radial-gradient(ellipse at 90% 75%, rgb(243 236 228 / 50%), transparent 32rem);
+  background-size: 20px 20px, auto, auto;
 }
 
 .member-site .member-page::before,
@@ -913,10 +914,11 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
 .member-site .explore-intro {
   position: relative;
   overflow: hidden;
-  border-color: #d8c8f0;
+  border-color: #e3d9cc;
   background:
-    radial-gradient(#d6c5ef .65px, transparent .75px) 0 0 / 19px 19px,
-    linear-gradient(112deg, #e8dcff 0%, #f4edff 58%, #ffdfcc 100%);
+    radial-gradient(#e4ded5 .65px, transparent .75px) 0 0 / 18px 18px,
+    linear-gradient(135deg, #f7f2eb 0%, #eee4d8 100%);
+  box-shadow: 0 10px 28px rgb(50 40 32 / 4%);
 }
 .member-site .explore-intro::after {
   position: absolute;
@@ -949,15 +951,22 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
   pointer-events: none;
   transform: translateY(-50%) rotate(7deg);
 }
-.member-site .explore-search-panel { background: #fffaf4; }
+.member-site .explore-search-panel {
+  background: #ffffff;
+  border-color: #e5ded5;
+  box-shadow: 0 6px 20px rgb(50 40 32 / 3%);
+}
 .member-site .explore-person-card {
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  border-color: #e7ded4;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgb(50 40 32 / 3%);
 }
 .member-site .explore-person-card:hover,
 .member-site .explore-person-card:focus-within {
-  transform: translateY(-4px);
-  border-color: #c6a9e8;
-  box-shadow: 0 16px 36px rgb(69 48 86 / 12%);
+  transform: translateY(-3px);
+  border-color: #cbbbae;
+  box-shadow: 0 12px 28px rgb(50 40 32 / 7%);
 }
 .member-site .explore-person-card .skill-chip { transition: background-color .18s ease, transform .18s ease; }
 .member-site .explore-person-card:hover .skill-chip { transform: translateY(-1px); }
@@ -1100,26 +1109,53 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
 }
 
 .member-site .learning-hero {
-  border-color: #e8c3b0;
+  border-color: #e5ded5;
   background:
-    radial-gradient(#e6cfc0 .65px, transparent .75px) 0 0 / 19px 19px,
-    linear-gradient(112deg, #ffe3d4 0%, #fff5e9 58%, #e5f7eb 100%);
-  box-shadow: 0 14px 38px rgb(95 57 39 / 7%);
+    radial-gradient(#e4ded5 .65px, transparent .75px) 0 0 / 18px 18px,
+    linear-gradient(135deg, #f7f2eb 0%, #f0e8dd 100%);
+  box-shadow: 0 8px 24px rgb(50 40 32 / 4%);
 }
-.member-site .learning-page .lessons-panel { background: #fffaf4; }
-.member-site .learning-page .goals-panel { background: #f0eaff; }
-.member-site .learning-page .chat-panel { background: #e6f5ec; }
+.member-site .learning-hero h1 em { color: #c45d3e; font-style: italic; }
+.member-site .learning-skill {
+  border: 1px solid #e6dfd6;
+  background: #ffffff;
+}
+.member-site .learning-exchange-arrow { color: #c45d3e; }
+.member-site .learning-page .learning-panel {
+  border-color: #e5ded5;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgb(50 40 32 / 3%);
+}
+.member-site .learning-page .lessons-panel { background: #ffffff; }
+.member-site .learning-page .goals-panel { background: #ffffff; }
+.member-site .learning-page .chat-panel { background: #ffffff; }
 .member-site .learning-page .lesson-card,
 .member-site .learning-page .learning-goal-list > li:not(.learning-empty) {
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  border-color: #ebe3da;
+  background: #faf7f3;
 }
 .member-site .learning-page .lesson-card:hover,
 .member-site .learning-page .lesson-card:focus-within,
 .member-site .learning-page .learning-goal-list > li:not(.learning-empty):hover {
   transform: translateY(-2px);
-  border-color: #c8b4e6;
-  box-shadow: 0 9px 20px rgb(66 48 80 / 8%);
+  border-color: #cbbbae;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgb(50 40 32 / 6%);
 }
+.member-site .learning-page .lesson-skill { background: #f2ebe3; color: #57483e; }
+.member-site .learning-page .lesson-resource { color: #c45d3e !important; }
+.member-site .learning-page .goal-toggle { border-color: #d8cfc5; color: #c45d3e; }
+.member-site .learning-page .goal-add-button { background: #28211d; }
+.member-site .learning-page .goal-add-button:hover { background: #c45d3e; }
+.member-site .learning-page .chat-feed { border-color: #ece3d8; background: #faf7f4; }
+.member-site .learning-page .chat-message { border-color: #ece3d8; background: #ffffff; }
+.member-site .learning-page .chat-message.chat-message-mine { background: #28211d; border-color: #28211d; }
+.member-site .learning-page .chat-message.chat-message-mine p { color: #ffffff; }
+.member-site .learning-page .chat-message.chat-message-mine .chat-message-meta strong,
+.member-site .learning-page .chat-message.chat-message-mine .chat-message-meta time { color: #b8aaa0; }
+.member-site .learning-page .learning-button-dark { background: #28211d; }
+.member-site .learning-page .learning-button-dark:hover { background: #c45d3e; }
 .member-site .learning-page .learning-compose[open] {
   border-color: #b9a0db;
   box-shadow: 0 0 0 3px rgb(191 157 255 / 17%);
@@ -1217,66 +1253,82 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
 .member-site.theme-dashboard .stat-card:hover { transform: translateY(-2px); }
 
 .member-site.theme-explore {
-  background-color: #f1eaff;
+  background-color: #fbf8f5;
   background-image:
-    radial-gradient(#d5c4eb .65px, transparent .75px),
-    radial-gradient(ellipse at 12% 16%, rgb(255 222 202 / 23%), transparent 30rem),
-    radial-gradient(ellipse at 90% 82%, rgb(191 157 255 / 20%), transparent 34rem);
+    radial-gradient(#e7ded4 .65px, transparent .75px),
+    radial-gradient(ellipse at 12% 16%, rgb(245 237 228 / 55%), transparent 32rem),
+    radial-gradient(ellipse at 88% 80%, rgb(240 234 225 / 45%), transparent 34rem);
+  background-size: 20px 20px, auto, auto;
 }
 .member-site.theme-explore .explore-intro {
-  min-height: 270px;
-  border-color: #c6afe8;
+  min-height: 230px;
+  border-color: #e3d9cc;
   background:
-    radial-gradient(rgb(255 255 255 / 38%) .7px, transparent .8px) 0 0 / 19px 19px,
-    linear-gradient(115deg, #d9c8f5 0%, #e8dcfa 100%);
-  box-shadow: 0 15px 36px rgb(75 55 105 / 10%);
+    radial-gradient(#e4ded5 .65px, transparent .75px) 0 0 / 18px 18px,
+    linear-gradient(135deg, #f7f2eb 0%, #eee4d8 100%);
+  box-shadow: 0 10px 28px rgb(50 40 32 / 4%);
 }
 .member-site.theme-explore .explore-intro .eyebrow,
-.member-site.theme-explore .explore-intro > p { color: #443652; }
-.member-site.theme-explore .explore-intro .eyebrow-dot { background: #50b995; }
-.member-site.theme-explore .explore-intro h1 { color: #2b2431; }
-.member-site.theme-explore .explore-intro h1 em { color: #d8584c; }
+.member-site.theme-explore .explore-intro > p { color: #584c44; }
+.member-site.theme-explore .explore-intro .eyebrow-dot { background: #c45d3e; }
+.member-site.theme-explore .explore-intro h1 { color: #28211d; }
+.member-site.theme-explore .explore-intro h1 em { color: #c45d3e; font-style: italic; }
 .member-site.theme-explore .explore-intro::after {
   right: 9%;
-  width: 170px;
-  height: 170px;
-  border-color: rgb(88 64 120 / 42%);
+  width: 150px;
+  height: 150px;
+  border-color: rgb(196 93 62 / 18%);
   background: transparent;
-  box-shadow: 0 0 0 16px rgb(255 255 255 / 29%), 0 0 0 32px rgb(139 103 181 / 13%);
+  box-shadow: 0 0 0 16px rgb(255 255 255 / 35%), 0 0 0 32px rgb(235 225 214 / 20%);
 }
 .member-site.theme-explore .explore-intro::before {
-  right: calc(9% + 50px);
-  background: #ff6555;
-  box-shadow: 0 9px 22px rgb(83 50 53 / 16%);
-  color: #fff8ee;
+  right: calc(9% + 40px);
+  background: #c45d3e;
+  box-shadow: 0 8px 20px rgb(95 50 35 / 15%);
+  color: #fff9f5;
 }
 .member-site.theme-explore .explore-search-panel {
-  border-color: #d9c9ec;
-  background: #fffaf5;
+  border-color: #e5ded5;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgb(50 40 32 / 3%);
 }
-.member-site.theme-explore .explore-search-field { background: #f1eaff; }
-.member-site.theme-explore .search-icon-coral { background: #ffe1d6; color: #bd5548; }
-.member-site.theme-explore .search-icon-lilac { background: #dfd1f6; color: #5c467e; }
-.member-site.theme-explore .explore-submit { background: #ff6555; color: #2c211e; }
-.member-site.theme-explore .explore-submit:hover { background: #f25548; }
-.member-site.theme-explore .explore-submit span { color: #fff7e8; }
+.member-site.theme-explore .explore-search-field {
+  border-color: #e8e1d7;
+  background: #faf7f4;
+}
+.member-site.theme-explore .explore-search-field:focus-within {
+  border-color: #c45d3e;
+  background: #ffffff;
+}
+.member-site.theme-explore .search-icon-coral { background: #faede8; color: #c45d3e; }
+.member-site.theme-explore .search-icon-lilac { background: #f0ebe4; color: #5c5047; }
+.member-site.theme-explore .explore-submit { background: #28211d; color: #ffffff; }
+.member-site.theme-explore .explore-submit:hover { background: #c45d3e; }
+.member-site.theme-explore .explore-submit span { color: #f5ebe6; }
 .member-site.theme-explore .explore-person-card,
 .member-site.theme-explore .explore-person-card:nth-child(n) {
-  border-color: #e1d6ef;
-  background: #fffaf5;
+  border-color: #e7ded4;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgb(50 40 32 / 3%);
 }
-.member-site.theme-explore .explore-person-card:nth-child(even) { background: #f8f4ff; }
-.member-site.theme-explore .explore-person-card:nth-child(4n + 3) { background: #fff8ef; }
 .member-site.theme-explore .explore-person-card:hover,
 .member-site.theme-explore .explore-person-card:focus-within {
-  border-color: #b79bdc;
-  box-shadow: 0 16px 34px rgb(69 48 86 / 12%);
+  border-color: #cbbbae;
+  box-shadow: 0 12px 28px rgb(50 40 32 / 7%);
 }
-.member-site.theme-explore .member-page .skill-chip,
-.member-site.theme-explore .wants-skills .skill-chip { border-color: #e3d8f0; background: #f0eaff; }
-.member-site.theme-explore .wants-skills .skill-chip { background: #ffe9dc; }
-.member-site.theme-explore .person-card-link { color: #655184 !important; }
-.member-site.theme-explore .person-card-link span { color: #db6452; }
+.member-site.theme-explore .member-page .skill-chip {
+  border-color: #e8dfd6;
+  background: #f6f1ea;
+  color: #4a4039;
+}
+.member-site.theme-explore .wants-skills .skill-chip {
+  border-color: #f2dfd7;
+  background: #fdf3ee;
+  color: #8c442c;
+}
+.member-site.theme-explore .person-card-link { color: #28211d !important; }
+.member-site.theme-explore .person-card-link:hover { color: #c45d3e !important; }
+.member-site.theme-explore .person-card-link span { color: #c45d3e; }
 
 @media (max-width: 760px) {
   .member-site.theme-dashboard .dashboard-welcome,

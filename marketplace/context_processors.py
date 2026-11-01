@@ -23,11 +23,8 @@ def notifications(request):
     if not request.user.is_authenticated:
         return {
             "unread_notifications_count": 0,
-            "latest_notifications": [],
         }
     unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
-    latest = Notification.objects.filter(recipient=request.user)[:5]
     return {
         "unread_notifications_count": unread_count,
-        "latest_notifications": latest,
     }

@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Avg, Count, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -942,6 +942,14 @@ def matching_profiles(user, profile):
     ).values_list("request__sender_id", "request__recipient_id"):
         completed_counts[sender_id] = completed_counts.get(sender_id, 0) + 1
         completed_counts[recipient_id] = completed_counts.get(recipient_id, 0) + 1
+
+    review_stats = {
+        row["reviewee"]: (round(row["avg_r"], 1), row["count_r"])
+        for row in Review.objects.values("reviewee").annotate(
+            avg_r=Avg("rating"), count_r=Count("id")
+        )
+    }
+
     profiles = (
         Profile.objects.exclude(user=user)
         .exclude(skills_to_teach="")
@@ -954,7 +962,7 @@ def matching_profiles(user, profile):
         if my_teach.intersection(skill.casefold() for skill in learn) and my_learn.intersection(
             skill.casefold() for skill in teach
         ):
-            person = profile_context(other_profile)
+            person = profile_context(other_profile, review_stats=review_stats)
             person["exchanges"] = completed_counts.get(other_profile.user_id, 0)
             matches.append(person)
     return matches
@@ -978,8 +986,12 @@ def exchange_history(user):
     return history
 
 
-def profile_context(profile):
+def profile_context(profile, review_stats=None):
     user = profile.user
+    if review_stats is not None and user.pk in review_stats:
+        avg_rating, review_count = review_stats[user.pk]
+    else:
+        avg_rating, review_count = profile.avg_rating, profile.review_count
     person = {
         "id": user.pk,
         "name": user.get_full_name() or user.username,
@@ -991,8 +1003,8 @@ def profile_context(profile):
         "learn_skills": profile.learn_skills,
         "can_teach": profile.teach_skills or ["No skills listed yet"],
         "wants_to_learn": profile.learn_skills or ["No skills listed yet"],
-        "avg_rating": profile.avg_rating,
-        "review_count": profile.review_count,
+        "avg_rating": avg_rating,
+        "review_count": review_count,
         "exchanges": 0,
     }
     return person
