@@ -1,6 +1,7 @@
 import json
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.core.cache import cache
 from django.utils import timezone
 
 from .models import Exchange, ExchangeMessage, Notification
@@ -36,6 +37,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
 
             saved_msg = await self.save_message(self.exchange_id, self.user, content)
+            if not saved_msg:
+                return
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -72,7 +75,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, exchange_id, user, content):
-        exchange = Exchange.objects.get(pk=exchange_id)
+        try:
+            exchange = Exchange.objects.get(pk=exchange_id)
+        except Exchange.DoesNotExist:
+            return None
         msg = ExchangeMessage.objects.create(
             exchange=exchange,
             author=user,
@@ -88,6 +94,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message=content[:100],
                 link=f"/exchanges/{exchange.pk}/learn/",
             )
+            cache.delete(f"user_unread_notif_{partner.pk}")
         return {
             "id": msg.pk,
             "author": user.get_full_name() or user.username,

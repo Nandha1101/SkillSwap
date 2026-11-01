@@ -1,9 +1,10 @@
 from django.core.cache import cache
-from .models import Notification
+
+from .models import Notification, Profile
 
 
 def navigation(request):
-    return {
+    context = {
         "current_route": request.resolver_match.url_name if request.resolver_match else "",
         "nav_items": [
             ("Explore", "explore"),
@@ -18,6 +19,16 @@ def navigation(request):
             ("Sessions", "sessions"),
         ],
     }
+    if request.user.is_authenticated:
+        cache_key = f"user_profile_{request.user.pk}"
+        profile = cache.get(cache_key)
+        if profile is None:
+            profile, _ = Profile.objects.get_or_create(user=request.user)
+            cache.set(cache_key, profile, 60)
+        context["user_profile"] = profile
+    else:
+        context["user_profile"] = None
+    return context
 
 
 def notifications(request):

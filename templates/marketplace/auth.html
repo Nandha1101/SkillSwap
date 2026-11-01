@@ -1,4 +1,5 @@
 {% extends "marketplace/base.html" %}
+{% load static %}
 {% block title %}{% if signup %}Join SkillSwap{% else %}Welcome back · SkillSwap{% endif %}{% endblock %}
 {% block content %}
 <main class="auth-page">
@@ -35,12 +36,12 @@
               {% if active_panel == "login" and form.email.errors %}<div class="field-errors">{{ form.email.errors }}</div>{% endif %}
             </div>
             <div class="auth-field">
-              <div class="auth-label-row">
-                <label for="{{ login_form.password.id_for_label }}">Password</label>
-                <a href="{% url 'password_reset' %}" class="auth-forgot-link">Forgot password?</a>
-              </div>
+              <label for="{{ login_form.password.id_for_label }}">Password</label>
               {{ login_form.password }}
               {% if active_panel == "login" and form.password.errors %}<div class="field-errors">{{ form.password.errors }}</div>{% endif %}
+              <div class="auth-forgot-row">
+                <a href="{% url 'password_reset' %}" class="auth-forgot-link">Forgot password?</a>
+              </div>
             </div>
             <button type="submit" class="auth-submit">Let me in <span aria-hidden="true">↗</span></button>
             <p class="auth-terms">By signing in, you’re joining a community built on sharing.</p>
@@ -62,17 +63,15 @@
               {% if active_panel == "signup" and form.full_name.errors %}<div class="field-errors">{{ form.full_name.errors }}</div>{% endif %}
             </div>
             <div class="auth-field">
-              <label for="{{ signup_form.email.id_for_label }}">College email</label>
+              <label for="{{ signup_form.email.id_for_label }}">Email address</label>
               {{ signup_form.email }}
               {% if active_panel == "signup" and form.email.errors %}<div class="field-errors">{{ form.email.errors }}</div>{% endif %}
             </div>
-            <div class="auth-field">
-              <label for="{{ signup_form.college.id_for_label }}">College or university</label>
-              <div class="college-search">
-                {{ signup_form.college }}
-                <div id="college-results" class="college-results" role="listbox" hidden></div>
-              </div>
-              <p class="college-help">Type 2+ letters and choose your college, or enter it yourself.</p>
+            <div class="auth-field college-field">
+              <label for="{{ signup_form.college.id_for_label }}">Where do you learn?</label>
+              {{ signup_form.college }}
+              <div class="college-autocomplete" id="college-results" hidden></div>
+              <p class="college-help">We connect you with peers at your campus and nearby colleges.</p>
               {% if active_panel == "signup" and form.college.errors %}<div class="field-errors">{{ form.college.errors }}</div>{% endif %}
             </div>
             <div class="auth-password-row">
@@ -82,21 +81,21 @@
                 {% if active_panel == "signup" and form.password1.errors %}<div class="field-errors">{{ form.password1.errors }}</div>{% endif %}
               </div>
               <div class="auth-field">
-                <label for="{{ signup_form.password2.id_for_label }}">Confirm it</label>
+                <label for="{{ signup_form.password2.id_for_label }}">Repeat it</label>
                 {{ signup_form.password2 }}
                 {% if active_panel == "signup" and form.password2.errors %}<div class="field-errors">{{ form.password2.errors }}</div>{% endif %}
               </div>
             </div>
-            <button type="submit" class="auth-submit">Create my account <span aria-hidden="true">↗</span></button>
-            <p class="auth-terms">Free to join. Always free to swap.</p>
+            <button type="submit" class="auth-submit">Create your account <span aria-hidden="true">↗</span></button>
+            <p class="auth-terms">Free to join. You only give what you’re ready to share.</p>
           </form>
         </section>
       </div>
 
-      <aside class="auth-switcher" aria-live="polite">
+      <aside class="auth-switcher" aria-hidden="true">
         <div class="auth-switch-content auth-switch-login">
-          <span class="auth-switch-stamp" aria-hidden="true">✳</span>
-          <span class="auth-switch-kicker">NEW AROUND HERE?</span>
+          <span class="auth-switch-stamp" aria-hidden="true">✦</span>
+          <span class="auth-switch-kicker">NEW HERE?</span>
           <h2>There’s room<br>for <em>one more.</em></h2>
           <p>Got a skill you love? Find someone who can teach you theirs.</p>
           <button type="button" class="auth-switch-button" data-auth-toggle="signup">Come on in <span aria-hidden="true">↗</span></button>

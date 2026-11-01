@@ -778,6 +778,7 @@ def settings_view(request):
     form = ProfileForm(request.POST or None, request.FILES or None, instance=profile, user=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
+        cache.delete(f"user_profile_{request.user.pk}")
         messages.success(request, "Your profile settings and photo have been saved.")
         return redirect("settings")
     return render(request, "marketplace/settings.html", {"form": form, "profile": profile})
@@ -917,7 +918,12 @@ def mark_notification_read(request, notification_id):
     notification.is_read = True
     notification.save(update_fields=("is_read",))
     cache.delete(f"user_unread_notif_{request.user.pk}")
-    next_url = request.POST.get("next") or notification.link or reverse("notifications")
+    # Reject absolute URLs to prevent open redirect; notification.link is always a relative path
+    raw_next = notification.link or request.POST.get("next") or ""  
+    if raw_next and not raw_next.startswith(("http://", "https://", "//")):
+        next_url = raw_next
+    else:
+        next_url = reverse("notifications")
     return redirect(next_url)
 
 

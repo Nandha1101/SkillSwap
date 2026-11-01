@@ -1631,10 +1631,18 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
   align-items: center;
   margin-bottom: 0.35rem;
 }
+.auth-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+}
 .auth-forgot-link {
   font-size: 0.72rem;
   color: #766a62;
   text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
 }
 .auth-forgot-link:hover {
   color: #c45d3e;

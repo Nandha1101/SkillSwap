@@ -60,8 +60,8 @@
                 {% endif %}
               </a>
               <a href="{% url 'my_profile' %}" class="member-nav-profile">
-                {% if user.profile.avatar %}
-                  <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name|default:user.username }}" class="mini-avatar-img">
+                {% if user_profile and user_profile.avatar %}
+                  <img src="{{ user_profile.avatar.url }}" alt="{{ user.get_full_name|default:user.username }}" class="mini-avatar-img">
                 {% else %}
                   <span class="mini-avatar">{{ user.first_name|first|default:user.username|first|upper }}</span>
                 {% endif %}

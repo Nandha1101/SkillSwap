@@ -9,6 +9,16 @@ from django.utils import timezone
 
 from .models import Exchange, ExchangeRequest, Profile, Review
 
+# Safe file extensions allowed for lesson attachments
+_ALLOWED_ATTACHMENT_EXTENSIONS = {
+    ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx",
+    ".txt", ".md", ".csv",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp",
+    ".mp4", ".webm",
+    ".zip",
+}
+_MAX_ATTACHMENT_SIZE_MB = 10
+
 
 class SignupForm(forms.Form):
     full_name = forms.CharField(max_length=150, label="Full name")
@@ -351,6 +361,20 @@ class ExchangeLessonForm(forms.Form):
         if not content:
             raise ValidationError("Add some lesson notes before publishing.")
         return content
+
+    def clean_attachment(self):
+        import os
+        attachment = self.cleaned_data.get("attachment")
+        if not attachment:
+            return attachment
+        ext = os.path.splitext(attachment.name)[1].lower()
+        if ext not in _ALLOWED_ATTACHMENT_EXTENSIONS:
+            allowed = ", ".join(sorted(_ALLOWED_ATTACHMENT_EXTENSIONS))
+            raise ValidationError(f"File type not allowed. Accepted: {allowed}")
+        max_bytes = _MAX_ATTACHMENT_SIZE_MB * 1024 * 1024
+        if attachment.size > max_bytes:
+            raise ValidationError(f"File is too large. Maximum size is {_MAX_ATTACHMENT_SIZE_MB} MB.")
+        return attachment
 
 
 class LearningGoalForm(forms.Form):

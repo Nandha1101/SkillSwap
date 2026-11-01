@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Avg
 
 
 class Profile(models.Model):
@@ -29,10 +30,10 @@ class Profile(models.Model):
 
     @property
     def avg_rating(self):
-        reviews = self.user.received_reviews.all()
-        if not reviews.exists():
+        average = self.user.received_reviews.aggregate(average=Avg("rating"))["average"]
+        if average is None:
             return None
-        return round(sum(r.rating for r in reviews) / reviews.count(), 1)
+        return round(average, 1)
 
     @property
     def review_count(self):

@@ -12,7 +12,7 @@ except ImportError:
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "development-only-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,*")
+allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
 
 csrf_trusted = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
@@ -147,6 +147,7 @@ STORAGES = {
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
@@ -169,6 +170,11 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "1") == "1"
     SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0") == "1"
 
+# Cookie Security (always enforced)
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
 # Performance Optimizations
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+# Session stored in database (visible in pgAdmin django_session table)
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 WHITENOISE_MAX_AGE = 31536000
