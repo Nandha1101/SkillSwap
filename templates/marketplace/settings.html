@@ -69,3 +69,7 @@
   <section class="settings-account"><div><span class="eyebrow">NEED A BREAK?</span><h2>You can always sign out.</h2></div><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out <span>↗</span></button></form></section>
 </div>
 {% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/college-search.js' %}" defer></script>
+{% endblock %}

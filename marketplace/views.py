@@ -62,6 +62,7 @@ def notify_user(recipient, actor, notification_type, title, message="", link="")
             message=message,
             link=link,
         )
+        cache.delete(f"user_unread_notif_{recipient.pk}")
     except Exception as error:
         logger.warning("Could not create notification: %s", error)
 
@@ -915,6 +916,7 @@ def mark_notification_read(request, notification_id):
     notification = get_object_or_404(Notification, pk=notification_id, recipient=request.user)
     notification.is_read = True
     notification.save(update_fields=("is_read",))
+    cache.delete(f"user_unread_notif_{request.user.pk}")
     next_url = request.POST.get("next") or notification.link or reverse("notifications")
     return redirect(next_url)
 
@@ -923,6 +925,7 @@ def mark_notification_read(request, notification_id):
 @require_POST
 def mark_all_notifications_read(request):
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    cache.delete(f"user_unread_notif_{request.user.pk}")
     messages.success(request, "All notifications marked as read.")
     return redirect("notifications")
 

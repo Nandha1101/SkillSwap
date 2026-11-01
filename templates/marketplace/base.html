@@ -6,13 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A peer-to-peer skill exchange for college students.">
     <title>{% block title %}Peer Skill Exchange{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+    <!-- 1. High-Priority Font Preload for Immediate H1 Painting -->
+    <link rel="preload" href="{% static 'fonts/instrument-serif-regular.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'fonts/inter-regular.woff2' %}" as="font" type="font/woff2" crossorigin>
+
+    <!-- 2. Self-Hosted Font Declarations with font-display: swap -->
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+
+    <!-- 3. Critical Above-The-Fold CSS (Inlined for <1s LCP on H1) -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #1c1917; }
+      body { margin: 0; min-height: 100vh; background-color: #fbf8f5; color: #1c1917; text-rendering: optimizeLegibility; }
+      h1, h2, h3, h4 { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; margin-top: 0; }
+      h1 { font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1.08; letter-spacing: -0.025em; color: #28211d; }
+      h1 em { font-style: italic; color: #c45d3e; }
+      .member-site { min-height: 100vh; background-color: #fbf8f5; }
+      .member-nav { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e7ded4; background: rgba(251, 248, 245, 0.96); backdrop-filter: blur(8px); }
+      .member-nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 0.75rem 1.25rem; }
+      .landing-brand { font-size: 1.2rem; font-weight: 700; text-decoration: none; color: #1c1917; display: flex; align-items: center; gap: 0.4rem; }
+      .brand-mark { width: 24px; height: 24px; border-radius: 6px; background: #c45d3e; color: #fff; display: grid; place-items: center; font-size: 0.85rem; font-weight: 700; }
+      .member-page { width: min(1120px, 100%); margin: 0 auto; padding: 1.5rem 1.25rem; }
+      .member-page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+      .member-page-heading .eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; color: #84766d; text-transform: uppercase; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+      .eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #c45d3e; }
+    </style>
+
+    <!-- 4. Stylesheets with WhiteNoise Caching -->
     <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021">
-    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-1">
-    <script src="{% static 'js/college-search.js' %}" defer></script>
-    <script src="{% static 'js/auth-toggle.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-3">
+
     {% block extra_head %}{% endblock %}
   </head>
   <body class="{% if user.is_authenticated %}member-site{% if current_route == 'dashboard' %} theme-dashboard{% elif current_route == 'explore' %} theme-explore{% elif current_route == 'requests' %} theme-requests{% elif current_route == 'sessions' %} theme-sessions{% elif current_route == 'settings' %} theme-settings{% elif current_route == 'profile' or current_route == 'my_profile' %} theme-profile{% elif current_route == 'exchange_learning' %} theme-learning{% elif current_route == 'notifications' %} theme-notifications{% endif %}{% else %}bg-surface{% endif %} font-sans text-text-primary">
@@ -50,14 +74,16 @@
         </div>
       </header>
     {% endif %}
-    {% if messages %}
-      <div class="max-w-3xl mx-auto px-4 pt-4" aria-live="polite">
-        {% for message in messages %}
-          <p class="notice {% if message.tags %}notice-{{ message.tags }}{% endif %}">{{ message }}</p>
-        {% endfor %}
-      </div>
-    {% endif %}
-    <main class="{% if user.is_authenticated %}pb-20 md:pb-8{% endif %}">
+    <main class="pb-20 md:pb-8">
+      {% if messages %}
+        <section class="messages-container" aria-label="Notifications">
+          {% for message in messages %}
+            <div class="message-banner message-{{ message.tags|default:'info' }}" role="status">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </section>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
     {% if user.is_authenticated %}
@@ -66,7 +92,8 @@
           <a href="{% url route %}" class="{% if current_route == route %}active{% endif %}">{{ label }}</a>
         {% endfor %}
         <a href="{% url 'notifications' %}" class="{% if current_route == 'notifications' %}active{% endif %}">
-          Alerts{% if unread_notifications_count > 0 %} ({{ unread_notifications_count }}){% endif %}
+          Alerts
+          {% if unread_notifications_count > 0 %}<span class="mobile-badge">{{ unread_notifications_count }}</span>{% endif %}
         </a>
       </nav>
     {% endif %}

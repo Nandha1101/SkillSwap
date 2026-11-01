@@ -168,3 +168,7 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "1") == "1"
     CSRF_COOKIE_SECURE = os.environ.get("CSRF_COOKIE_SECURE", "1") == "1"
     SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "0") == "1"
+
+# Performance Optimizations
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+WHITENOISE_MAX_AGE = 31536000

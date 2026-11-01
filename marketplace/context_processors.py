@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from .models import Notification
 
 
@@ -24,7 +25,11 @@ def notifications(request):
         return {
             "unread_notifications_count": 0,
         }
-    unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    cache_key = f"user_unread_notif_{request.user.pk}"
+    unread_count = cache.get(cache_key)
+    if unread_count is None:
+        unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+        cache.set(cache_key, unread_count, 15)
     return {
         "unread_notifications_count": unread_count,
     }
