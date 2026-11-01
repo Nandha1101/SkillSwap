@@ -28,25 +28,7 @@
     </div>
   </header>
 
-  {% if can_edit %}
-  <section class="learning-call" aria-labelledby="video-call-heading">
-    <div class="learning-call-copy">
-      <span class="learning-call-icon" aria-hidden="true">◉</span>
-      <div><h2 id="video-call-heading">Meet in your video room</h2><p>Camera and microphone are controlled by your browser. Calls use Jitsi Meet.</p></div>
-    </div>
-    <button
-      type="button"
-      class="learning-button learning-button-dark"
-      data-video-join
-      data-domain="{{ jitsi_domain }}"
-      data-room="skillswap-{{ exchange.video_room.hex }}"
-      data-display-name="{{ display_name }}"
-      aria-controls="video-room"
-    >Join call <span aria-hidden="true">↗</span></button>
-    <p class="learning-status" data-video-status role="status" aria-live="polite"></p>
-    <div id="video-room" class="video-room" data-video-container></div>
-  </section>
-  {% else %}
+  {% if not can_edit %}
   <div class="learning-readonly-note" role="status">
     <span aria-hidden="true">✓</span><p>This exchange is complete. Your saved lessons, goals, and conversation are still here to revisit.</p>
   </div>
@@ -61,7 +43,7 @@
       {% if can_teach %}
       <details class="learning-compose">
         <summary><span aria-hidden="true">＋</span> Add a lesson or resource</summary>
-        <form method="post" action="{% url 'publish_exchange_lesson' exchange.pk %}" class="learning-form">
+        <form method="post" action="{% url 'publish_exchange_lesson' exchange.pk %}" enctype="multipart/form-data" class="learning-form">
           {% csrf_token %}
           {% for field in lesson_form %}
           <div class="settings-field">
@@ -81,10 +63,17 @@
           <h3>{{ lesson.title }}</h3>
           <p class="lesson-byline">Shared by {{ lesson.author.get_full_name|default:lesson.author.username }}</p>
           <div class="lesson-content">{{ lesson.content|linebreaksbr }}</div>
-          {% if lesson.resource_url %}<a class="lesson-resource" href="{{ lesson.resource_url }}" target="_blank" rel="noopener noreferrer">Open resource <span aria-hidden="true">↗</span></a>{% endif %}
+          {% if lesson.resource_url %}
+            <a class="lesson-resource" href="{{ lesson.resource_url }}" target="_blank" rel="noopener noreferrer">Open external resource <span aria-hidden="true">↗</span></a>
+          {% endif %}
+          {% if lesson.attachment %}
+            <a class="lesson-resource attachment-link" href="{{ lesson.attachment.url }}" download>
+              <span aria-hidden="true">📎</span> {{ lesson.attachment_name|default:"Download lesson attachment" }}
+            </a>
+          {% endif %}
         </article>
         {% empty %}
-        <div class="learning-empty"><span aria-hidden="true">＋</span><p>{% if can_edit %}Your shared library is ready. Add the first lesson or resource when you’re ready.{% else %}No lessons or resources were saved during this exchange.{% endif %}</p></div>
+        <div class="learning-empty"><span aria-hidden="true">＋</span><p>{% if can_edit %}Your shared library is ready. Add the first lesson or resource when you're ready.{% else %}No lessons or resources were saved during this exchange.{% endif %}</p></div>
         {% endfor %}
       </div>
     </section>
@@ -121,12 +110,13 @@
 
       <section class="learning-panel chat-panel" aria-labelledby="chat-heading">
         <div class="learning-panel-heading">
-          <div><span class="learning-kicker">JUST BETWEEN YOU TWO</span><h2 id="chat-heading">Conversation</h2></div>
-          {% if can_edit %}<span class="chat-live-indicator"><i></i> Live</span>{% else %}<span class="chat-archived-label">History</span>{% endif %}
+          <div><span class="learning-kicker">REAL-TIME CHAT</span><h2 id="chat-heading">Conversation</h2></div>
+          {% if can_edit %}<span class="chat-live-indicator" data-live-status><i></i> Live</span>{% else %}<span class="chat-archived-label">History</span>{% endif %}
         </div>
         <div
           class="chat-feed"
           data-chat-feed
+          data-exchange-id="{{ exchange.pk }}"
           data-poll-url="{% url 'exchange_messages' exchange.pk %}"
           data-last-id="{{ latest_message_id }}"
           aria-label="Messages with {{ partner.get_full_name|default:partner.username }}"
@@ -138,12 +128,12 @@
               <p>{{ chat_message.content }}</p>
             </li>
             {% empty %}
-            <li class="learning-empty chat-empty" data-chat-empty><p>{% if can_edit %}Start the conversation or share what you’re hoping to learn.{% else %}There are no saved messages in this exchange.{% endif %}</p></li>
+            <li class="learning-empty chat-empty" data-chat-empty><p>{% if can_edit %}Start the conversation or share what you're hoping to learn.{% else %}There are no saved messages in this exchange.{% endif %}</p></li>
             {% endfor %}
           </ol>
         </div>
         <p class="learning-status" data-chat-status role="status" aria-live="polite"></p>
-        {% if can_edit %}<form method="post" action="{% url 'send_exchange_message' exchange.pk %}" class="chat-compose">
+        {% if can_edit %}<form method="post" action="{% url 'send_exchange_message' exchange.pk %}" class="chat-compose" data-chat-form>
           {% csrf_token %}
           <label class="visually-hidden" for="{{ message_form.content.id_for_label }}">{{ message_form.content.label }}</label>
           {{ message_form.content }}

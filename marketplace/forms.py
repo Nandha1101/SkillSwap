@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Exchange, ExchangeRequest, Profile
+from .models import Exchange, ExchangeRequest, Profile, Review
 
 
 class SignupForm(forms.Form):
@@ -119,8 +119,9 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ("college", "year", "bio", "skills_to_teach", "skills_to_learn", "session_format")
+        fields = ("avatar", "college", "year", "bio", "skills_to_teach", "skills_to_learn", "session_format")
         labels = {
+            "avatar": "Profile photo",
             "skills_to_teach": "Skills I can teach (comma separated)",
             "skills_to_learn": "Skills I want to learn (comma separated)",
             "session_format": "Preferred session format",
@@ -130,7 +131,10 @@ class ProfileForm(forms.ModelForm):
         self.user = user
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
-            field.widget.attrs["class"] = "form-input"
+            if name != "avatar":
+                field.widget.attrs["class"] = "form-input"
+            else:
+                field.widget.attrs["class"] = "form-input-file"
             field.widget.attrs["id"] = f"profile_{name}"
         self.fields["college"].widget.attrs.update({
             "role": "combobox",
@@ -322,6 +326,11 @@ class ExchangeLessonForm(forms.Form):
             "placeholder": "https://example.com/guide",
         }),
     )
+    attachment = forms.FileField(
+        required=False,
+        label="File or project attachment (optional)",
+        widget=forms.FileInput(attrs={"class": "form-input-file"}),
+    )
 
     def __init__(self, *args, exchange, user, **kwargs):
         super().__init__(*args, **kwargs)
@@ -377,3 +386,26 @@ class ExchangeMessageForm(forms.Form):
         if not content:
             raise ValidationError("Write a message before sending.")
         return content
+
+
+class ReviewForm(forms.ModelForm):
+    rating = forms.TypedChoiceField(
+        choices=((5, "5 ★ — Exceptional exchange"), (4, "4 ★ — Very good session"), (3, "3 ★ — Good"), (2, "2 ★ — Fair"), (1, "1 ★ — Poor")),
+        coerce=int,
+        label="Rating",
+        widget=forms.Select(attrs={"class": "form-input"}),
+    )
+    comment = forms.CharField(
+        max_length=1000,
+        required=False,
+        label="Review note (optional)",
+        widget=forms.Textarea(attrs={
+            "class": "form-input",
+            "rows": 3,
+            "placeholder": "Share what you learned from your partner…",
+        }),
+    )
+
+    class Meta:
+        model = Review
+        fields = ("rating", "comment")

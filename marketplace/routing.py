@@ -1,0 +1,8 @@
+from django.urls import re_path
+
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r"^ws/exchanges/(?P<exchange_id>\d+)/chat/$", consumers.ChatConsumer.as_asgi()),
+]
+

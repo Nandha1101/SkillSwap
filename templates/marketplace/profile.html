@@ -4,15 +4,64 @@
 <div class="member-page profile-page">
   <a class="profile-back-link" href="{% url 'explore' %}">← Back to your people</a>
   <section class="profile-hero">
-    <div class="profile-hero-art"><span class="profile-art-orbit"></span><span class="profile-art-star">✳</span><span class="profile-avatar">{{ person.name|first|upper }}</span></div>
-    <div class="profile-hero-copy"><span class="eyebrow"><span class="eyebrow-dot"></span> HERE TO SHARE A LITTLE KNOW-HOW</span><h1>{{ person.name }}<em>.</em></h1><p class="profile-college">{{ person.college }}{% if person.year %} <span>·</span> {{ person.year }}{% endif %}</p><p class="profile-bio">{{ person.bio }}</p><div class="profile-quick-stats"><span><strong>{{ person.exchanges }}</strong> completed skill swaps</span></div>
-      {% if is_current_user %}<a href="{% url 'settings' %}" class="profile-cta">Give your profile a little love <span>↗</span></a>{% elif existing_exchange %}<span class="profile-cta">You're already swapping skills <span>✓</span></span>{% elif existing_request %}<span class="profile-cta">A request is already on its way <span>✓</span></span>{% elif can_propose %}<a href="#propose-swap" class="profile-cta">Propose a skill swap <span>↗</span></a>{% else %}<span class="profile-cta">Add matching skills to make a swap <span>↗</span></span>{% endif %}
+    <div class="profile-hero-art">
+      <span class="profile-art-orbit"></span>
+      <span class="profile-art-star">✳</span>
+      {% if person.avatar_url %}
+        <img src="{{ person.avatar_url }}" alt="{{ person.name }}" class="profile-avatar-img">
+      {% else %}
+        <span class="profile-avatar">{{ person.name|first|upper }}</span>
+      {% endif %}
+    </div>
+    <div class="profile-hero-copy">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> HERE TO SHARE A LITTLE KNOW-HOW</span>
+      <h1>{{ person.name }}<em>.</em></h1>
+      <p class="profile-college">{{ person.college }}{% if person.year %} <span>·</span> {{ person.year }}{% endif %}</p>
+      <p class="profile-bio">{{ person.bio }}</p>
+      <div class="profile-quick-stats">
+        <span><strong>{{ person.exchanges }}</strong> completed skill swaps</span>
+        {% if person.avg_rating %}
+          <span>·</span>
+          <span class="rating-highlight">★ <strong>{{ person.avg_rating }}</strong> ({{ person.review_count }} {% if person.review_count == 1 %}review{% else %}reviews{% endif %})</span>
+        {% endif %}
+      </div>
+      {% if is_current_user %}
+        <a href="{% url 'settings' %}" class="profile-cta">Give your profile a little love <span>↗</span></a>
+      {% elif existing_exchange %}
+        <span class="profile-cta">You're already swapping skills <span>✓</span></span>
+      {% elif existing_request %}
+        <span class="profile-cta">A request is already on its way <span>✓</span></span>
+      {% elif can_propose %}
+        <a href="#propose-swap" class="profile-cta">Propose a skill swap <span>↗</span></a>
+      {% else %}
+        <span class="profile-cta">Add matching skills to make a swap <span>↗</span></span>
+      {% endif %}
     </div>
   </section>
+
   <section class="profile-skills">
-    <article class="profile-skill-panel teach-panel"><div class="profile-skill-icon">↑</div><span class="eyebrow">GOOD THINGS I CAN SHOW</span><h2>I've got this.</h2><div class="profile-skill-list">{% for skill in person.can_teach %}<span>{{ skill }}<b>✳</b></span>{% endfor %}</div></article>
-    <article class="profile-skill-panel learn-panel"><div class="profile-skill-icon">↓</div><span class="eyebrow">THINGS I'M CURIOUS ABOUT</span><h2>Teach me something.</h2><div class="profile-skill-list">{% for skill in person.wants_to_learn %}<span>{{ skill }}<b>✳</b></span>{% endfor %}</div></article>
+    <article class="profile-skill-panel teach-panel">
+      <div class="profile-skill-icon">↑</div>
+      <span class="eyebrow">GOOD THINGS I CAN SHOW</span>
+      <h2>I've got this.</h2>
+      <div class="profile-skill-list">
+        {% for skill in person.can_teach %}
+          <span>{{ skill }}<b>✳</b></span>
+        {% endfor %}
+      </div>
+    </article>
+    <article class="profile-skill-panel learn-panel">
+      <div class="profile-skill-icon">↓</div>
+      <span class="eyebrow">THINGS I'M CURIOUS ABOUT</span>
+      <h2>Teach me something.</h2>
+      <div class="profile-skill-list">
+        {% for skill in person.wants_to_learn %}
+          <span>{{ skill }}<b>✳</b></span>
+        {% endfor %}
+      </div>
+    </article>
   </section>
+
   {% if not is_current_user %}
   <section class="profile-history" id="propose-swap">
     <div class="profile-history-heading"><div><span class="eyebrow">MAKE IT A TWO-WAY THING</span><h2>Propose a little swap.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
@@ -30,9 +79,43 @@
     {% endif %}
   </section>
   {% endif %}
-  <section class="profile-history"><div class="profile-history-heading"><div><span class="eyebrow">LITTLE MOMENTS OF LEARNING</span><h2>Swap stories.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
-    {% for exchange in exchange_history %}<article class="past-session"><span class="past-session-check" aria-hidden="true">✓</span><div class="past-session-main"><div class="past-session-meta">Completed {{ exchange.completed_at|date:"M j, Y" }}</div><h3>{{ exchange.offered_skill }} ↔ {{ exchange.requested_skill }}</h3><p>Swapped with {{ exchange.partner }}</p></div></article>
-    {% empty %}<div class="profile-history-empty"><span>✳</span><p>{% if is_current_user %}Your first completed swap story is waiting to happen.{% else %}Their next skill-swap story is waiting to happen.{% endif %}</p></div>{% endfor %}
+
+  <!-- Reviews & Feedback Section -->
+  <section class="profile-history">
+    <div class="profile-history-heading">
+      <div><span class="eyebrow">COMMUNITY REPUTATION</span><h2>Reviews &amp; endorsements.</h2></div>
+      <span class="session-count">{{ reviews|length }} reviews</span>
+    </div>
+    {% for review in reviews %}
+      <article class="past-session review-item">
+        <span class="past-session-check" aria-hidden="true">★</span>
+        <div class="past-session-main">
+          <div class="past-session-meta">
+            <span>{{ review.rating }} ★★★★★</span> · {{ review.created_at|date:"M j, Y" }}
+          </div>
+          {% if review.comment %}
+            <p class="review-comment">"{{ review.comment }}"</p>
+          {% else %}
+            <p class="review-comment italic text-muted">Left a {{ review.rating }}★ rating.</p>
+          {% endif %}
+          <small class="review-author">From <strong>{{ review.reviewer.get_full_name|default:review.reviewer.username }}</strong></small>
+        </div>
+      </article>
+    {% empty %}
+      <div class="profile-history-empty">
+        <span>★</span>
+        <p>{% if is_current_user %}Complete your first skill swap to earn reviews from your peers.{% else %}No reviews yet. Be the first to exchange skills and leave feedback!{% endif %}</p>
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="profile-history">
+    <div class="profile-history-heading"><div><span class="eyebrow">LITTLE MOMENTS OF LEARNING</span><h2>Swap stories.</h2></div><span class="history-decoration" aria-hidden="true">↗</span></div>
+    {% for exchange in exchange_history %}
+      <article class="past-session"><span class="past-session-check" aria-hidden="true">✓</span><div class="past-session-main"><div class="past-session-meta">Completed {{ exchange.completed_at|date:"M j, Y" }}</div><h3>{{ exchange.offered_skill }} ↔ {{ exchange.requested_skill }}</h3><p>Swapped with {{ exchange.partner }}</p></div></article>
+    {% empty %}
+      <div class="profile-history-empty"><span>✳</span><p>{% if is_current_user %}Your first completed swap story is waiting to happen.{% else %}Their next skill-swap story is waiting to happen.{% endif %}</p></div>
+    {% endfor %}
   </section>
 </div>
 {% endblock %}

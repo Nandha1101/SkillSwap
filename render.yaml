@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: skillswap
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "daphne -b 0.0.0.0 -p $PORT skillswap.asgi:application"
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillswap-db
+          property: connectionString
+
+databases:
+  - name: skillswap-db
+    databaseName: skillswap_db
+    user: skillswap_user
+    plan: free
+

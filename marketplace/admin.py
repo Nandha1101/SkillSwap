@@ -6,14 +6,16 @@ from .models import (
     ExchangeMessage,
     ExchangeRequest,
     LearningGoal,
+    Notification,
     Profile,
+    Review,
     Session,
 )
 
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "college", "year", "session_format")
+    list_display = ("user", "college", "year", "session_format", "avg_rating", "review_count")
     search_fields = ("user__username", "user__email", "user__first_name", "user__last_name", "college")
     list_filter = ("session_format", "college")
 
@@ -43,7 +45,7 @@ class SessionAdmin(admin.ModelAdmin):
 
 @admin.register(ExchangeLesson)
 class ExchangeLessonAdmin(admin.ModelAdmin):
-    list_display = ("title", "skill", "exchange", "author", "created_at")
+    list_display = ("title", "skill", "exchange", "author", "attachment", "created_at")
     search_fields = ("title", "skill", "author__username")
     readonly_fields = ("created_at",)
 
@@ -61,3 +63,19 @@ class LearningGoalAdmin(admin.ModelAdmin):
     list_filter = ("is_completed",)
     search_fields = ("title", "created_by__username")
     readonly_fields = ("created_at", "completed_at")
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ("exchange", "reviewer", "reviewee", "rating", "created_at")
+    list_filter = ("rating", "created_at")
+    search_fields = ("reviewer__username", "reviewee__username", "comment")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("recipient", "notification_type", "title", "is_read", "created_at")
+    list_filter = ("notification_type", "is_read", "created_at")
+    search_fields = ("recipient__username", "title", "message")
+    readonly_fields = ("created_at",)

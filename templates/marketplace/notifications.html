@@ -1,0 +1,83 @@
+{% extends "marketplace/base.html" %}
+{% block title %}Notifications — SkillSwap{% endblock %}
+{% block content %}
+<div class="member-page requests-page">
+  <div class="member-page-heading request-page-heading">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-dot"></span> Updates &amp; activity</span>
+      <h1>Your notifications</h1>
+      <p>Stay on top of exchange requests, upcoming sessions, lessons, and reviews.</p>
+    </div>
+    {% if unread_notifications_count > 0 %}
+      <form method="post" action="{% url 'mark_all_notifications_read' %}">
+        {% csrf_token %}
+        <button type="submit" class="cta-outline cta-small">Mark all as read</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+    <div class="notifications-list">
+      {% for notif in notifications %}
+        <div class="notification-card {% if not notif.is_read %}notification-unread{% endif %}">
+          <div class="notification-icon-wrap" aria-hidden="true">
+            {% if notif.notification_type == "request_received" %}
+              <span class="notif-badge notif-coral">↔</span>
+            {% elif notif.notification_type == "request_accepted" %}
+              <span class="notif-badge notif-mint">✓</span>
+            {% elif notif.notification_type == "session_scheduled" %}
+              <span class="notif-badge notif-lilac">📅</span>
+            {% elif notif.notification_type == "review_received" %}
+              <span class="notif-badge notif-yellow">★</span>
+            {% elif notif.notification_type == "message_received" %}
+              <span class="notif-badge notif-mint">💬</span>
+            {% else %}
+              <span class="notif-badge notif-peach">✳</span>
+            {% endif %}
+          </div>
+          <div class="notification-body">
+            <div class="notification-header">
+              <h2 class="notification-title">{{ notif.title }}</h2>
+              <span class="notification-time">{{ notif.created_at|timesince }} ago</span>
+            </div>
+            {% if notif.message %}
+              <p class="notification-message">{{ notif.message }}</p>
+            {% endif %}
+            <div class="notification-actions">
+              {% if notif.link %}
+                <a href="{{ notif.link }}" class="text-link">View details <span>↗</span></a>
+              {% endif %}
+              {% if not notif.is_read %}
+                <form method="post" action="{% url 'mark_notification_read' notif.pk %}" class="inline-form">
+                  {% csrf_token %}
+                  <button type="submit" class="notification-mark-btn">Mark as read</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+      <div class="pagination-nav">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="pagination-btn">← Newer</a>
+        {% endif %}
+        <span class="pagination-info">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="pagination-btn">Older →</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="requests-empty">
+      <span class="empty-spark" aria-hidden="true">✦</span>
+      <h2>You're all caught up.</h2>
+      <p>When students send you exchange requests, schedule sessions, or share lessons, they will show up here.</p>
+      <a href="{% url 'explore' %}" class="button-mint">Explore community ↗</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

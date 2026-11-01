@@ -1288,3 +1288,302 @@ html:not(.auth-ready) .auth-switch-button { display: none; }html:not(.auth-ready
   .member-site.theme-explore .explore-intro::before,
   .member-site.theme-explore .explore-intro::after { display: none; }
 }
+
+
+/* New Features: Notifications, Avatars, Reviews, Pagination, Files */
+.member-nav-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #766b64;
+  background: #f7eee7;
+  font-size: 1rem;
+  transition: background-color 0.15s, color 0.15s;
+}
+.member-nav-bell:hover, .member-nav-bell.active {
+  background: #f8e7dc;
+  color: #1c1917;
+}
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff6555;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+.mini-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e7e5e4;
+}
+.explore-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.profile-avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.settings-avatar-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e7e5e4;
+}
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #f0e8e1;
+  margin-bottom: 1.5rem;
+}
+.form-input-file {
+  font-size: 0.82rem;
+  color: #655951;
+}
+
+/* Notifications */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid #eee4da;
+  border-radius: 12px;
+  background: #fffefa;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.notification-unread {
+  background: #fff8f5;
+  border-color: #f7d5cc;
+  box-shadow: 0 2px 10px rgba(196, 93, 62, 0.05);
+}
+.notification-icon-wrap {
+  flex-shrink: 0;
+  padding-top: 0.15rem;
+}
+.notif-badge {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.notif-coral { background: #ffe2d7; color: #c45d3e; }
+.notif-mint { background: #d9f4e8; color: #28623a; }
+.notif-lilac { background: #eee5ff; color: #7056a3; }
+.notif-yellow { background: #fff2c6; color: #8c6b31; }
+.notif-peach { background: #ffefe5; color: #c45d3e; }
+.notification-body {
+  flex: 1;
+  min-width: 0;
+}
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.notification-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1c1917;
+  margin: 0;
+}
+.notification-time {
+  font-size: 0.68rem;
+  color: #8b7d73;
+  white-space: nowrap;
+}
+.notification-message {
+  font-size: 0.78rem;
+  color: #655951;
+  margin: 0 0 0.6rem;
+  line-height: 1.5;
+}
+.notification-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.72rem;
+}
+.notification-mark-btn {
+  background: transparent;
+  border: 0;
+  color: #8b7d73;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.72rem;
+}
+.notification-mark-btn:hover {
+  color: #1c1917;
+  text-decoration: underline;
+}
+
+/* Pagination */
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f0e8e1;
+}
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  color: #1c1917;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.pagination-btn:hover:not(.disabled) {
+  background: #f7eee7;
+  border-color: #d6c6b8;
+}
+.pagination-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-info {
+  font-size: 0.78rem;
+  color: #766b64;
+  font-weight: 500;
+}
+
+/* Card Badges & Ratings */
+.card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.rating-gold {
+  background: #fff3c4 !important;
+  color: #8c6b31 !important;
+  font-weight: 700 !important;
+}
+.rating-highlight {
+  color: #c45d3e;
+  font-weight: 600;
+}
+
+/* Reviews */
+.review-item {
+  background: #fffefa;
+}
+.review-comment {
+  font-style: italic;
+  font-size: 0.88rem;
+  color: #3e3834;
+  margin: 0.35rem 0 0.5rem;
+}
+.review-author {
+  color: #8b7d73;
+  font-size: 0.72rem;
+}
+.past-session-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+.badge-reviewed {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #e4f5eb;
+  color: #28623a;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.review-dropdown summary {
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #c45d3e;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #fff0e9;
+  list-style: none;
+}
+.review-dropdown summary::-webkit-details-marker { display: none; }
+.review-form {
+  margin-top: 0.8rem;
+  padding: 1rem;
+  background: #fff8f5;
+  border: 1px solid #f2dbd3;
+  border-radius: 10px;
+}
+
+/* Attachments */
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  background: #f7eee7;
+  color: #57534e !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  border: 1px solid #e7dfd5;
+}
+.attachment-link:hover {
+  background: #f0e2d8;
+  color: #1c1917 !important;
+}
+
+/* Auth enhancements */
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+.auth-forgot-link {
+  font-size: 0.72rem;
+  color: #766a62;
+  text-decoration: underline;
+}
+.auth-forgot-link:hover {
+  color: #c45d3e;
+}

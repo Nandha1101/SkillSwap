@@ -5,14 +5,18 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.core.mail import send_mail
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST
@@ -24,6 +28,7 @@ from .forms import (
     ExchangeRequestForm,
     LearningGoalForm,
     ProfileForm,
+    ReviewForm,
     SessionForm,
     SignupForm,
 )
@@ -33,10 +38,11 @@ from .models import (
     ExchangeMessage,
     ExchangeRequest,
     LearningGoal,
+    Notification,
     Profile,
+    Review,
     Session,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +50,35 @@ logger = logging.getLogger(__name__)
 def profile_for(user):
     profile, _ = Profile.objects.get_or_create(user=user)
     return profile
+
+
+def notify_user(recipient, actor, notification_type, title, message="", link=""):
+    try:
+        Notification.objects.create(
+            recipient=recipient,
+            actor=actor,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            link=link,
+        )
+    except Exception as error:
+        logger.warning("Could not create notification: %s", error)
+
+
+def send_email_notification(recipient, subject, body):
+    if not recipient.email:
+        return
+    try:
+        send_mail(
+            subject=f"[SkillSwap] {subject}",
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient.email],
+            fail_silently=True,
+        )
+    except Exception as error:
+        logger.warning("Could not send email notification: %s", error)
 
 
 def landing(request):
@@ -152,6 +187,13 @@ def signup_view(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
+        notify_user(
+            recipient=user,
+            actor=None,
+            notification_type=Notification.NotificationType.REQUEST_RECEIVED,
+            title="Welcome to SkillSwap! Add skills to your profile to find matches.",
+            link=reverse("settings"),
+        )
         return redirect("dashboard")
     return render(request, "marketplace/auth.html", {
         "form": form,
@@ -185,11 +227,7 @@ def dashboard(request):
         .select_related("request__sender__profile", "request__recipient__profile")
     )
     for exchange in active_exchanges:
-        exchange.partner = (
-            exchange.request.recipient
-            if exchange.request.sender_id == request.user.pk
-            else exchange.request.sender
-        )
+        exchange.partner = exchange.partner_for(request.user)
     next_session = (
         Session.objects.filter(
             status=Session.Status.SCHEDULED,
@@ -200,11 +238,7 @@ def dashboard(request):
         .first()
     )
     if next_session:
-        next_session.partner = (
-            next_session.exchange.request.recipient
-            if next_session.exchange.request.sender_id == request.user.pk
-            else next_session.exchange.request.sender
-        )
+        next_session.partner = next_session.exchange.partner_for(request.user)
     suggestions = matching_profiles(request.user, profile)[:3]
     return render(request, "marketplace/dashboard.html", {
         "profile": profile,
@@ -231,9 +265,21 @@ def explore(request):
         matches = [person for person in matches if skill_matches(teach, person["learn_skills"])]
     if learn:
         matches = [person for person in matches if skill_matches(learn, person["teach_skills"])]
+
+    page = request.GET.get("page", 1)
+    paginator = Paginator(matches, 6)
+    try:
+        page_obj = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
     return render(request, "marketplace/explore.html", {
-        "users": matches,
-        "teach": teach, "learn": learn,
+        "users": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "is_paginated": page_obj.has_other_pages(),
+        "teach": teach,
+        "learn": learn,
     })
 
 
@@ -249,11 +295,13 @@ def requests_view(request):
     items = []
     for exchange_request in exchange_requests:
         other = exchange_request.sender if tab == "received" else exchange_request.recipient
+        other_profile = getattr(other, "profile", None)
         related_exchange = getattr(exchange_request, "exchange", None)
         items.append({
             "id": exchange_request.pk,
             "name": other.get_full_name() or other.username,
-            "college": getattr(getattr(other, "profile", None), "college", ""),
+            "college": getattr(other_profile, "college", ""),
+            "avatar_url": other_profile.avatar.url if (other_profile and other_profile.avatar) else None,
             "requested": exchange_request.requested_skill if tab == "received" else exchange_request.offered_skill,
             "offered": exchange_request.offered_skill if tab == "received" else exchange_request.requested_skill,
             "message": exchange_request.message,
@@ -277,7 +325,7 @@ def update_request(request, request_id):
         return redirect("requests")
     with transaction.atomic():
         exchange_request = get_object_or_404(
-            ExchangeRequest.objects.select_for_update(),
+            ExchangeRequest.objects.select_for_update().select_related("sender"),
             pk=request_id,
             recipient=request.user,
         )
@@ -296,8 +344,9 @@ def update_request(request, request_id):
                 return redirect("requests")
         exchange_request.status = action
         exchange_request.save(update_fields=("status", "updated_at"))
+        exchange = None
         if action == ExchangeRequest.Status.ACCEPTED:
-            Exchange.objects.get_or_create(request=exchange_request)
+            exchange, _ = Exchange.objects.get_or_create(request=exchange_request)
             ExchangeRequest.objects.filter(
                 Q(sender=exchange_request.sender, recipient=exchange_request.recipient)
                 | Q(sender=exchange_request.recipient, recipient=exchange_request.sender),
@@ -306,6 +355,31 @@ def update_request(request, request_id):
                 status=ExchangeRequest.Status.DECLINED,
                 updated_at=timezone.now(),
             )
+
+    notif_type = (
+        Notification.NotificationType.REQUEST_ACCEPTED
+        if action == ExchangeRequest.Status.ACCEPTED
+        else Notification.NotificationType.REQUEST_DECLINED
+    )
+    link = reverse("exchange_learning", args=[exchange.pk]) if exchange else reverse("requests")
+    notify_user(
+        recipient=exchange_request.sender,
+        actor=request.user,
+        notification_type=notif_type,
+        title=f"{request.user.get_full_name() or request.user.username} {action} your skill exchange request!",
+        message=f"{exchange_request.offered_skill} ↔ {exchange_request.requested_skill}",
+        link=link,
+    )
+    send_email_notification(
+        recipient=exchange_request.sender,
+        subject=f"Exchange request {action} by {request.user.get_full_name() or request.user.username}",
+        body=(
+            f"Hi {exchange_request.sender.first_name or exchange_request.sender.username},\n\n"
+            f"{request.user.get_full_name() or request.user.username} has {action} your request to swap "
+            f"{exchange_request.offered_skill} for {exchange_request.requested_skill}.\n\n"
+            f"Check your SkillSwap dashboard to get started!\n- The SkillSwap Team"
+        ),
+    )
     messages.success(request, f"Request {action}.")
     return redirect("requests")
 
@@ -321,15 +395,12 @@ def sessions_view(request):
     upcoming = list(sessions.filter(status=Session.Status.SCHEDULED, starts_at__gte=timezone.now()))
     past = list(sessions.filter(Q(status=Session.Status.COMPLETED) | Q(starts_at__lt=timezone.now())).order_by("-starts_at"))
     for session in upcoming + past:
-        session.partner = (
-            session.exchange.request.recipient
-            if session.exchange.request.sender_id == request.user.pk
-            else session.exchange.request.sender
-        )
+        session.partner = session.exchange.partner_for(request.user)
+
     form = SessionForm(user=request.user)
     exchange_choices = [("", "---------")]
     for exchange in form.fields["exchange"].queryset:
-        partner = exchange.request.recipient if exchange.request.sender_id == request.user.pk else exchange.request.sender
+        partner = exchange.partner_for(request.user)
         exchange_choices.append(
             (exchange.pk, f"{partner.get_full_name() or partner.username} · {exchange.request.offered_skill} ↔ {exchange.request.requested_skill}")
         )
@@ -340,16 +411,20 @@ def sessions_view(request):
         .filter(Q(request__sender=request.user) | Q(request__recipient=request.user))
         .select_related("request__sender", "request__recipient")
     )
+    reviewed_exchange_ids = set(
+        Review.objects.filter(reviewer=request.user, exchange__in=completed_exchanges).values_list("exchange_id", flat=True)
+    )
     for exchange in completed_exchanges:
-        exchange.partner = (
-            exchange.request.recipient
-            if exchange.request.sender_id == request.user.pk
-            else exchange.request.sender
-        )
+        exchange.partner = exchange.partner_for(request.user)
+        exchange.has_reviewed = exchange.pk in reviewed_exchange_ids
+
     return render(request, "marketplace/sessions.html", {
-        "upcoming": upcoming, "past": past, "form": form,
+        "upcoming": upcoming,
+        "past": past,
+        "form": form,
         "active_exchanges": active_exchanges,
         "completed_exchanges": completed_exchanges,
+        "review_form": ReviewForm(),
     })
 
 
@@ -358,14 +433,35 @@ def sessions_view(request):
 def schedule_session(request):
     form = SessionForm(request.POST, user=request.user)
     if form.is_valid():
+        exchange = form.cleaned_data["exchange"]
         session = Session(
-            exchange=form.cleaned_data["exchange"],
+            exchange=exchange,
             created_by=request.user,
             topic=form.cleaned_data["topic"],
             starts_at=form.cleaned_data["starts_at"],
             duration_minutes=form.cleaned_data["duration_minutes"],
         )
         session.save()
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.SESSION_SCHEDULED,
+            title=f"New session scheduled: {session.topic}",
+            message=f"{session.starts_at.strftime('%A, %b %d at %I:%M %p')} ({session.duration_minutes} min)",
+            link=reverse("sessions"),
+        )
+        send_email_notification(
+            recipient=partner,
+            subject=f"New session scheduled by {request.user.get_full_name() or request.user.username}",
+            body=(
+                f"Hi {partner.first_name or partner.username},\n\n"
+                f"{request.user.get_full_name() or request.user.username} scheduled a session with you on \"{session.topic}\".\n"
+                f"Date & Time: {session.starts_at.strftime('%A, %b %d at %I:%M %p')}\n"
+                f"Duration: {session.duration_minutes} minutes\n\n"
+                f"View your calendar on SkillSwap!\n- The SkillSwap Team"
+            ),
+        )
         messages.success(request, "Your session is on the calendar.")
     else:
         messages.error(request, "Please choose a valid exchange and future session time.")
@@ -387,7 +483,25 @@ def complete_exchange(request, exchange_id):
         exchange.status = Exchange.Status.COMPLETED
         exchange.completed_at = timezone.now()
         exchange.save(update_fields=("status", "completed_at"))
-        messages.success(request, "Exchange marked complete. Thanks for sharing what you know!")
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.SESSION_COMPLETED,
+            title="Skill exchange completed! Please leave a review.",
+            message=f"{exchange.request.offered_skill} ↔ {exchange.request.requested_skill}",
+            link=reverse("sessions"),
+        )
+        send_email_notification(
+            recipient=partner,
+            subject="Skill exchange completed — Leave a review!",
+            body=(
+                f"Hi {partner.first_name or partner.username},\n\n"
+                f"Your exchange with {request.user.get_full_name() or request.user.username} was marked complete!\n"
+                f"Head over to SkillSwap to leave a review and share feedback.\n\n- The SkillSwap Team"
+            ),
+        )
+        messages.success(request, "Exchange marked complete. Thanks for sharing what you know! Don't forget to leave a review below.")
     return redirect("sessions")
 
 
@@ -408,7 +522,61 @@ def complete_session(request, session_id):
         session.status = Session.Status.COMPLETED
         session.completed_at = timezone.now()
         session.save(update_fields=("status", "completed_at"))
+        partner = session.exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.SESSION_COMPLETED,
+            title=f"Session completed: {session.topic}",
+            link=reverse("sessions"),
+        )
         messages.success(request, "Session marked complete. Nice work!")
+    return redirect("sessions")
+
+
+@login_required
+@require_POST
+def submit_review(request, exchange_id):
+    exchange = get_object_or_404(Exchange.objects.select_related("request"), pk=exchange_id)
+    if not exchange.includes(request.user):
+        messages.error(request, "You are not a participant in this exchange.")
+        return redirect("sessions")
+    if exchange.status != Exchange.Status.COMPLETED:
+        messages.error(request, "You can only review an exchange after it is completed.")
+        return redirect("sessions")
+
+    partner = exchange.partner_for(request.user)
+    if Review.objects.filter(exchange=exchange, reviewer=request.user).exists():
+        messages.info(request, "You have already submitted a review for this exchange.")
+        return redirect("sessions")
+
+    form = ReviewForm(request.POST)
+    if form.is_valid():
+        review = form.save(commit=False)
+        review.exchange = exchange
+        review.reviewer = request.user
+        review.reviewee = partner
+        review.save()
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.REVIEW_RECEIVED,
+            title=f"{request.user.get_full_name() or request.user.username} left you a {review.rating}★ review!",
+            message=review.comment[:100] if review.comment else "Thank you for the skill exchange!",
+            link=reverse("my_profile"),
+        )
+        send_email_notification(
+            recipient=partner,
+            subject=f"New review received from {request.user.get_full_name() or request.user.username}",
+            body=(
+                f"Hi {partner.first_name or partner.username},\n\n"
+                f"{request.user.get_full_name() or request.user.username} left a {review.rating}★ rating on your profile:\n\n"
+                f"\"{review.comment}\"\n\n- The SkillSwap Team"
+            ),
+        )
+        messages.success(request, f"Review submitted for {partner.get_full_name() or partner.username}!")
+    else:
+        messages.error(request, "Please choose a valid rating.")
     return redirect("sessions")
 
 
@@ -435,21 +603,20 @@ def exchange_learning(request, exchange_id):
     messages_list = exchange.messages.select_related("author").order_by("-created_at")[:100]
     messages_list = list(reversed(messages_list))
     goals = exchange.goals.select_related("created_by", "completed_by").all()
-    partner = (
-        exchange.request.recipient
-        if exchange.request.sender_id == request.user.pk
-        else exchange.request.sender
-    )
+    partner = exchange.partner_for(request.user)
+
     if exchange.request.sender_id == request.user.pk:
         teaching_skill = exchange.request.offered_skill
         learning_skill = exchange.request.requested_skill
     else:
         teaching_skill = exchange.request.requested_skill
         learning_skill = exchange.request.offered_skill
+
     lesson_form = ExchangeLessonForm(exchange=exchange, user=request.user)
     can_edit = exchange.status == Exchange.Status.ACTIVE
     can_teach = can_edit and bool(lesson_form.fields["skill"].choices)
     latest_message_id = messages_list[-1].pk if messages_list else 0
+
     return render(request, "marketplace/exchange_learning.html", {
         "exchange": exchange,
         "partner": partner,
@@ -464,7 +631,6 @@ def exchange_learning(request, exchange_id):
         "message_form": ExchangeMessageForm(),
         "can_teach": can_teach,
         "can_edit": can_edit,
-        "jitsi_domain": "meet.jit.si",
         "display_name": request.user.get_full_name() or request.user.username,
     })
 
@@ -473,15 +639,30 @@ def exchange_learning(request, exchange_id):
 @require_POST
 def publish_exchange_lesson(request, exchange_id):
     exchange = get_exchange_for_user(exchange_id, request.user, active_only=True)
-    form = ExchangeLessonForm(request.POST, exchange=exchange, user=request.user)
+    form = ExchangeLessonForm(request.POST, request.FILES, exchange=exchange, user=request.user)
     if form.is_valid():
-        ExchangeLesson.objects.create(
+        lesson = ExchangeLesson(
             exchange=exchange,
             author=request.user,
             skill=form.cleaned_data["skill"],
             title=form.cleaned_data["title"],
             content=form.cleaned_data["content"],
             resource_url=form.cleaned_data["resource_url"],
+        )
+        if "attachment" in request.FILES:
+            att = request.FILES["attachment"]
+            lesson.attachment = att
+            lesson.attachment_name = att.name
+        lesson.save()
+
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.MESSAGE_RECEIVED,
+            title=f"{request.user.get_full_name() or request.user.username} shared a new lesson: {lesson.title}",
+            message=f"Covering {lesson.skill}",
+            link=reverse("exchange_learning", args=[exchange.pk]),
         )
         messages.success(request, "Your lesson has been shared with your exchange partner.")
     else:
@@ -495,10 +676,19 @@ def send_exchange_message(request, exchange_id):
     exchange = get_exchange_for_user(exchange_id, request.user, active_only=True)
     form = ExchangeMessageForm(request.POST)
     if form.is_valid():
-        ExchangeMessage.objects.create(
+        msg = ExchangeMessage.objects.create(
             exchange=exchange,
             author=request.user,
             content=form.cleaned_data["content"],
+        )
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.MESSAGE_RECEIVED,
+            title=f"New message from {request.user.get_full_name() or request.user.username}",
+            message=msg.content[:100],
+            link=reverse("exchange_learning", args=[exchange.pk]),
         )
     else:
         messages.error(request, "Enter a message before sending.")
@@ -540,6 +730,14 @@ def add_learning_goal(request, exchange_id):
             created_by=request.user,
             title=form.cleaned_data["title"],
         )
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.GOAL_COMPLETED,
+            title=f"New goal added: {form.cleaned_data['title']}",
+            link=reverse("exchange_learning", args=[exchange.pk]),
+        )
         messages.success(request, "Learning goal added.")
     else:
         messages.error(request, "Enter a goal before adding it.")
@@ -560,16 +758,26 @@ def toggle_learning_goal(request, exchange_id, goal_id):
         goal.completed_by = request.user if goal.is_completed else None
         goal.completed_at = timezone.now() if goal.is_completed else None
         goal.save(update_fields=("is_completed", "completed_by", "completed_at"))
+
+    if goal.is_completed:
+        partner = exchange.partner_for(request.user)
+        notify_user(
+            recipient=partner,
+            actor=request.user,
+            notification_type=Notification.NotificationType.GOAL_COMPLETED,
+            title=f"Goal completed: {goal.title}",
+            link=reverse("exchange_learning", args=[exchange.pk]),
+        )
     return redirect("exchange_learning", exchange_id=exchange.pk)
 
 
 @login_required
 def settings_view(request):
     profile = profile_for(request.user)
-    form = ProfileForm(request.POST or None, instance=profile, user=request.user)
+    form = ProfileForm(request.POST or None, request.FILES or None, instance=profile, user=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
-        messages.success(request, "Your profile settings have been saved.")
+        messages.success(request, "Your profile settings and photo have been saved.")
         return redirect("settings")
     return render(request, "marketplace/settings.html", {"form": form, "profile": profile})
 
@@ -600,6 +808,7 @@ def profile_view(request, user_id=None):
         person = profile_context(other_profile)
         history = exchange_history(other_user)
         person["exchanges"] = len(history)
+        reviews = Review.objects.filter(reviewee=other_user).select_related("reviewer", "reviewer__profile")
         return render(request, "marketplace/profile.html", {
             "person": person,
             "is_current_user": False,
@@ -608,14 +817,18 @@ def profile_view(request, user_id=None):
             "existing_request": existing_request,
             "existing_exchange": existing_exchange,
             "exchange_history": history,
+            "reviews": reviews,
         })
+
     history = exchange_history(request.user)
     person = profile_context(profile)
     person["exchanges"] = len(history)
+    reviews = Review.objects.filter(reviewee=request.user).select_related("reviewer", "reviewer__profile")
     return render(request, "marketplace/profile.html", {
         "person": person,
         "is_current_user": True,
         "exchange_history": history,
+        "reviews": reviews,
     })
 
 
@@ -652,10 +865,66 @@ def create_exchange_request(request, user_id):
                 exchange_request.sender = request.user
                 exchange_request.recipient = recipient_profile.user
                 exchange_request.save()
+                notify_user(
+                    recipient=recipient_profile.user,
+                    actor=request.user,
+                    notification_type=Notification.NotificationType.REQUEST_RECEIVED,
+                    title=f"{request.user.get_full_name() or request.user.username} wants to swap skills with you!",
+                    message=f"{exchange_request.offered_skill} ↔ {exchange_request.requested_skill}",
+                    link=reverse("requests"),
+                )
+                send_email_notification(
+                    recipient=recipient_profile.user,
+                    subject=f"New skill exchange request from {request.user.get_full_name() or request.user.username}",
+                    body=(
+                        f"Hi {recipient_profile.user.first_name or recipient_profile.user.username},\n\n"
+                        f"{request.user.get_full_name() or request.user.username} sent you an exchange request:\n"
+                        f"They teach: {exchange_request.offered_skill}\n"
+                        f"They want to learn: {exchange_request.requested_skill}\n\n"
+                        f"Note: \"{exchange_request.message}\"\n\n"
+                        f"Review and respond on SkillSwap!\n- The SkillSwap Team"
+                    ),
+                )
                 messages.success(request, "Your exchange request has been sent.")
     else:
         messages.error(request, "That exchange could not be sent. Check that your profiles list matching skills.")
     return redirect("profile", user_id=recipient_profile.user_id)
+
+
+@login_required
+def notifications_view(request):
+    notifications_qs = Notification.objects.filter(recipient=request.user).select_related("actor")
+    page = request.GET.get("page", 1)
+    paginator = Paginator(notifications_qs, 15)
+    try:
+        page_obj = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    return render(request, "marketplace/notifications.html", {
+        "notifications": page_obj.object_list,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "is_paginated": page_obj.has_other_pages(),
+    })
+
+
+@login_required
+@require_POST
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(Notification, pk=notification_id, recipient=request.user)
+    notification.is_read = True
+    notification.save(update_fields=("is_read",))
+    next_url = request.POST.get("next") or notification.link or reverse("notifications")
+    return redirect(next_url)
+
+
+@login_required
+@require_POST
+def mark_all_notifications_read(request):
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    messages.success(request, "All notifications marked as read.")
+    return redirect("notifications")
 
 
 def skill_matches(query, skills):
@@ -699,11 +968,7 @@ def exchange_history(user):
     )
     history = []
     for exchange in completed:
-        partner = (
-            exchange.request.recipient
-            if exchange.request.sender_id == user.pk
-            else exchange.request.sender
-        )
+        partner = exchange.partner_for(user)
         history.append({
             "offered_skill": exchange.request.offered_skill,
             "requested_skill": exchange.request.requested_skill,
@@ -718,6 +983,7 @@ def profile_context(profile):
     person = {
         "id": user.pk,
         "name": user.get_full_name() or user.username,
+        "avatar_url": profile.avatar.url if profile.avatar else None,
         "college": profile.college or "Add your college",
         "bio": profile.bio or "Add a short introduction about yourself.",
         "year": profile.year,
@@ -725,6 +991,8 @@ def profile_context(profile):
         "learn_skills": profile.learn_skills,
         "can_teach": profile.teach_skills or ["No skills listed yet"],
         "wants_to_learn": profile.learn_skills or ["No skills listed yet"],
+        "avg_rating": profile.avg_rating,
+        "review_count": profile.review_count,
         "exchanges": 0,
     }
     return person

@@ -272,8 +272,7 @@ class MarketplaceFlowTests(TestCase):
         self.client.force_login(self.user)
         page = self.client.get(reverse("exchange_learning", args=[exchange.pk]))
         self.assertEqual(page.status_code, 200)
-        self.assertContains(page, "Meet in your video room")
-        self.assertContains(page, f"skillswap-{exchange.video_room.hex}")
+        self.assertContains(page, "Learn")
         self.assertContains(page, "Conversation")
         self.assertContains(page, "Shared goals")
         self.assertContains(page, "TEACHING")
@@ -340,7 +339,6 @@ class MarketplaceFlowTests(TestCase):
         self.assertContains(page, message.content)
         self.assertContains(page, goal.title)
         self.assertContains(page, "Read only")
-        self.assertNotContains(page, "data-video-join")
         self.assertNotContains(
             page,
             f'action="{reverse("publish_exchange_lesson", args=[exchange.pk])}"',
@@ -355,7 +353,7 @@ class MarketplaceFlowTests(TestCase):
         )
 
         sessions_page = self.client.get(reverse("sessions"))
-        self.assertContains(sessions_page, "Past swaps.")
+        self.assertContains(sessions_page, "Past swaps")
         self.assertContains(sessions_page, reverse("exchange_learning", args=[exchange.pk]))
 
         self.client.post(

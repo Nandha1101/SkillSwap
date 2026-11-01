@@ -10,12 +10,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021">
-    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261021-design-4">
+    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-1">
     <script src="{% static 'js/college-search.js' %}" defer></script>
     <script src="{% static 'js/auth-toggle.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% if user.is_authenticated %}member-site{% if current_route == 'dashboard' %} theme-dashboard{% elif current_route == 'explore' %} theme-explore{% elif current_route == 'requests' %} theme-requests{% elif current_route == 'sessions' %} theme-sessions{% elif current_route == 'settings' %} theme-settings{% elif current_route == 'profile' or current_route == 'my_profile' %} theme-profile{% elif current_route == 'exchange_learning' %} theme-learning{% endif %}{% else %}bg-surface{% endif %} font-sans text-text-primary">
+  <body class="{% if user.is_authenticated %}member-site{% if current_route == 'dashboard' %} theme-dashboard{% elif current_route == 'explore' %} theme-explore{% elif current_route == 'requests' %} theme-requests{% elif current_route == 'sessions' %} theme-sessions{% elif current_route == 'settings' %} theme-settings{% elif current_route == 'profile' or current_route == 'my_profile' %} theme-profile{% elif current_route == 'exchange_learning' %} theme-learning{% elif current_route == 'notifications' %} theme-notifications{% endif %}{% else %}bg-surface{% endif %} font-sans text-text-primary">
     {% if user.is_authenticated %}
       <header class="member-nav">
         <div class="member-nav-inner">
@@ -29,11 +29,24 @@
               {% endfor %}
             </nav>
             <div class="member-nav-account">
-              <a href="{% url 'my_profile' %}" class="member-nav-profile"><span class="mini-avatar">{{ user.first_name|first|upper }}</span><span>{{ user.get_full_name|default:user.username }}</span></a>
+              <a href="{% url 'notifications' %}" class="member-nav-bell {% if current_route == 'notifications' %}active{% endif %}" title="Notifications" aria-label="Notifications">
+                <span class="bell-icon" aria-hidden="true">🔔</span>
+                {% if unread_notifications_count > 0 %}
+                  <span class="bell-badge">{{ unread_notifications_count }}</span>
+                {% endif %}
+              </a>
+              <a href="{% url 'my_profile' %}" class="member-nav-profile">
+                {% if user.profile.avatar %}
+                  <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name|default:user.username }}" class="mini-avatar-img">
+                {% else %}
+                  <span class="mini-avatar">{{ user.first_name|first|default:user.username|first|upper }}</span>
+                {% endif %}
+                <span>{{ user.get_full_name|default:user.username }}</span>
+              </a>
               <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-                  <button class="member-nav-logout" type="submit">Log out <span>↗</span></button>
-                </form>
-              </div>
+                <button class="member-nav-logout" type="submit">Log out <span>↗</span></button>
+              </form>
+            </div>
         </div>
       </header>
     {% endif %}
@@ -52,6 +65,9 @@
         {% for label, route in mobile_nav_items %}
           <a href="{% url route %}" class="{% if current_route == route %}active{% endif %}">{{ label }}</a>
         {% endfor %}
+        <a href="{% url 'notifications' %}" class="{% if current_route == 'notifications' %}active{% endif %}">
+          Alerts{% if unread_notifications_count > 0 %} ({{ unread_notifications_count }}){% endif %}
+        </a>
       </nav>
     {% endif %}
     {% block extra_scripts %}{% endblock %}
