@@ -11,11 +11,30 @@
     <link rel="preload" href="{% static 'fonts/instrument-serif-regular.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{% static 'fonts/inter-regular.woff2' %}" as="font" type="font/woff2" crossorigin>
 
-    <!-- 2. Self-Hosted Font Declarations with font-display: swap -->
-    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
-
-    <!-- 3. Critical Above-The-Fold CSS (Inlined for <1s LCP on H1) -->
+    <!-- 2. Critical Inlined Font Face & Above-The-Fold CSS (<1s LCP on H1) -->
     <style>
+      @font-face {
+        font-family: 'Instrument Serif';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('{% static "fonts/instrument-serif-regular.woff2" %}') format('woff2');
+      }
+      @font-face {
+        font-family: 'Instrument Serif';
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url('{% static "fonts/instrument-serif-italic.woff2" %}') format('woff2');
+      }
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url('{% static "fonts/inter-regular.woff2" %}') format('woff2');
+      }
+
       *, *::before, *::after { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #1c1917; }
       body { margin: 0; min-height: 100vh; background-color: #fbf8f5; color: #1c1917; text-rendering: optimizeLegibility; }
@@ -33,9 +52,13 @@
       .eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #c45d3e; }
     </style>
 
-    <!-- 4. Stylesheets with WhiteNoise Caching -->
-    <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021">
-    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-3">
+    <!-- 3. Asynchronous Non-Blocking Stylesheets (Prevents Render Delay) -->
+    <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-3" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="{% static 'css/framework.css' %}?v=20261021">
+      <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261101-final-3">
+    </noscript>
 
     {% block extra_head %}{% endblock %}
   </head>

@@ -47,6 +47,19 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+@require_GET
+def ping(request):
+    """Lightweight keep-alive endpoint - touches DB to prevent Neon cold-starts."""
+    from django.db import connection
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return JsonResponse({"ok": True})
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=503)
+
+
 def profile_for(user):
     profile, _ = Profile.objects.get_or_create(user=user)
     return profile
@@ -83,9 +96,12 @@ def send_email_notification(recipient, subject, body):
 
 
 def landing(request):
-    member_count = Profile.objects.exclude(
-        skills_to_teach="",
-    ).exclude(skills_to_learn="").count()
+    member_count = cache.get("landing_member_count")
+    if member_count is None:
+        member_count = Profile.objects.exclude(
+            skills_to_teach="",
+        ).exclude(skills_to_learn="").count()
+        cache.set("landing_member_count", member_count, 300)
     return render(request, "marketplace/landing.html", {"member_count": member_count})
 
 
@@ -779,6 +795,7 @@ def settings_view(request):
     if request.method == "POST" and form.is_valid():
         form.save()
         cache.delete(f"user_profile_{request.user.pk}")
+        cache.delete(f"user_matches_{request.user.pk}")
         messages.success(request, "Your profile settings and photo have been saved.")
         return redirect("settings")
     return render(request, "marketplace/settings.html", {"form": form, "profile": profile})
@@ -942,6 +959,11 @@ def skill_matches(query, skills):
 
 
 def matching_profiles(user, profile):
+    cache_key = f"user_matches_{user.pk}"
+    cached_matches = cache.get(cache_key)
+    if cached_matches is not None:
+        return cached_matches
+
     my_teach = {skill.casefold() for skill in profile.teach_skills}
     my_learn = {skill.casefold() for skill in profile.learn_skills}
     matches = []
@@ -974,6 +996,7 @@ def matching_profiles(user, profile):
             person = profile_context(other_profile, review_stats=review_stats)
             person["exchanges"] = completed_counts.get(other_profile.user_id, 0)
             matches.append(person)
+    cache.set(cache_key, matches, 60)
     return matches
 
 

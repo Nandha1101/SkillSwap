@@ -89,7 +89,7 @@ if os.environ.get("REDIS_URL"):
     }
 
 # Database Configuration:
-# 1. If DATABASE_URL is set (Render, Railway, Heroku), use dj_database_url
+# 1. If DATABASE_URL is set (Render, Railway, Heroku, Neon), use dj_database_url
 # 2. If DB_PASSWORD / DB_ENGINE=postgresql is set, use local PostgreSQL
 # 3. Otherwise, fall back to SQLite for seamless local setup
 database_url = os.environ.get("DATABASE_URL")
@@ -99,8 +99,11 @@ if database_url:
         "default": dj_database_url.config(
             default=database_url,
             conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True if "neon.tech" in database_url else False,
         )
     }
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 elif os.environ.get("DB_ENGINE") == "postgresql" or os.environ.get("DB_PASSWORD") or os.environ.get("USE_POSTGRES") == "1":
     DATABASES = {
         "default": {
@@ -175,6 +178,6 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
 # Performance Optimizations
-# Session stored in database (visible in pgAdmin django_session table)
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+# Session with write-through cache: persists to DB/pgAdmin while serving reads from RAM
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 WHITENOISE_MAX_AGE = 31536000
